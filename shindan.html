@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法務人材診断</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .question-text {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .option-label:hover {
+            background: #e9ecef;
+        }
+        .option-label input {
+            margin-right: 10px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f4fd;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+        }
+        .result-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚖️ 法務人材診断 ⚖️</h1>
+    <form id="quizForm">
+        <!-- 質問1 -->
+        <div class="question-block">
+            <p class="question-text">Q1. ルールは読むより作る方が好きだ</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q1" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q1" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q1" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q1" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q1" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問2 -->
+        <div class="question-block">
+            <p class="question-text">Q2. 色々な人の考え方を聞くのが好きだ</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q2" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q2" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q2" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q2" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q2" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問3 -->
+        <div class="question-block">
+            <p class="question-text">Q3. 最高裁に行ってみたい</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q3" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q3" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q3" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q3" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q3" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問4 -->
+        <div class="question-block">
+            <p class="question-text">Q4. 頼りにされるとついつい面倒をみてしまう</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q4" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q4" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q4" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q4" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q4" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <button type="button" onclick="diagnose()">診断結果を見る</button>
+    </form>
+
+    <div id="result">
+        <p class="result-title">あなたの法務タイプは...</p>
+        <h2 id="typeTitle"></h2>
+        <p id="typeDescription"></p>
+    </div>
+</div>
+
+<script>
+function diagnose() {
+    const form = document.getElementById('quizForm');
+    
+    // 全て回答されているかチェック
+    if (!form.reportValidity()) {
+        return; 
+    }
+
+    // 各質問の選択された値（点数）を取得
+    const score1 = parseInt(document.querySelector('input[name="q1"]:checked').value);
+    const score2 = parseInt(document.querySelector('input[name="q2"]:checked').value);
+    const score3 = parseInt(document.querySelector('input[name="q3"]:checked').value);
+    const score4 = parseInt(document.querySelector('input[name="q4"]:checked').value);
+
+    // 各タイプの点数を集計（今回は各質問＝各タイプとしてストレートにカウント）
+    const types = [
+        { name: "👑 規律創造型 (ルールメーカー)", score: score1, desc: "新法や社内規程など、仕組みをゼロから構築することにワクワクするタイプです！" },
+        { name: "🤝 交渉調停型 (ネゴシエーター)", score: score2, desc: "様々なステークホルダーの意見を調整し、円満に合意へ導くコミュニケーション能力抜群のタイプです！" },
+        { name: "⚖️ 論理探究型 (リーガルアナリスト)", score: score3, desc: "判例や緻密な法理の探究に情熱を燃やす、まさに職人気質の本格派リーガルマインドです！" },
+        { name: "🛡️ 守護者型 (リーガルアドバイザー)", score: score4, desc: "周囲からの相談に親身に乗り、リスクから仲間や組織をどっしりと守る頼れる相談役です！" }
+    ];
+
+    // 最も点数が高かったタイプを判定
+    let maxType = types[0];
+    for (let i = 1; i < types.length; i++) {
+        if (types[i].score > maxType.score) {
+            maxType = types[i];
+        }
+    }
+
+    // 結果を表示
+    document.getElementById('typeTitle').innerText = maxType.name;
+    document.getElementById('typeDescription').innerText = maxType.desc;
+    
+    const resultDiv = document.getElementById('result');
+    resultDiv.style.display = 'block';
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
 
