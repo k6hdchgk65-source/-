@@ -173,25 +173,40 @@ function diagnose() {
     const score3 = parseInt(document.querySelector('input[name="q3"]:checked').value);
     const score4 = parseInt(document.querySelector('input[name="q4"]:checked').value);
 
-    // 各タイプの点数を集計（今回は各質問＝各タイプとしてストレートにカウント）
-    const types = [
-        { name: "👑 制度企画型", score: score1, desc: "仕組みをゼロから構築することにワクワクするタイプです！企画部門で目指せ条例制定！" },
-        { name: "🤝 訴訟支援型", score: score2, desc: "様々なステークホルダーの意見を調整し、円満に合意へ導くコミュニケーション能力抜群のタイプです！東京都に派遣に行ってみよう" },
-        { name: "⚖️ 審査会型", score: score3, desc: "判例や緻密な法理が大好き、職人気質のリーガルマインドです！不服審査の世界へようこそ！" },
-        { name: "🛡️ コンプラ型", score: score4, desc: "周囲からの相談に親身に乗り、時にはおせっかいをかく、あなた！リスクから仲間や組織をどっしりと守る頼れる相談役です！" }
-    ];
+    // 合計点を計算
+    const totalScore = score1 + score2 + score3 + score4;
 
-    // 最も点数が高かったタイプを判定
-    let maxType = types[0];
-    for (let i = 1; i < types.length; i++) {
-        if (types[i].score > maxType.score) {
-            maxType = types[i];
+    let finalName = "";
+    let finalDesc = "";
+
+    // ★すべてのスコアが低い（合計10点以下：平均2.5点以下）場合の判定
+    if (totalScore <= 10) {
+        finalName = "📝 文書審査型";
+        finalDesc = "目立つ行動や派手な議論よりも、規程や契約書の文字、てにをはをじっくりチェックする方が落ち着くタイプ。誤字脱字や論理の矛盾を見逃さない、バックオフィスの縁の下の力持ちです！";
+    } else {
+        // 通常の最高点判定
+        const types = [
+            { name: "👑 制度企画型", score: score1, desc: "仕組みをゼロから構築することにワクワクするタイプです！企画部門で目指せ条例制定！" },
+            { name: "🤝 訴訟支援型", score: score2, desc: "様々なステークホルダーの意見を調整し、円満に合意へ導くコミュニケーション能力抜群のタイプです！東京都に派遣に行ってみよう" },
+            { name: "⚖️ 審査会型", score: score3, desc: "判例や緻密な法理が大好き、職人気質のリーガルマインドです！不服審査の世界へようこそ！" },
+            { name: "🛡️ コンプラ型", score: score4, desc: "周囲からの相談に親身に乗り、時にはおせっかいをかく、あなた！リスクから仲間や組織をどっしりと守る頼れる相談役です！" }
+        ];
+
+        // 最も点数が高かったタイプを判定
+        let maxType = types[0];
+        for (let i = 1; i < types.length; i++) {
+            if (types[i].score > maxType.score) {
+                maxType = types[i];
+            }
         }
+        
+        finalName = maxType.name;
+        finalDesc = maxType.desc;
     }
 
     // 結果を表示
-    document.getElementById('typeTitle').innerText = maxType.name;
-    document.getElementById('typeDescription').innerText = maxType.desc;
+    document.getElementById('typeTitle').innerText = finalName;
+    document.getElementById('typeDescription').innerText = finalDesc;
     
     const resultDiv = document.getElementById('result');
     resultDiv.style.display = 'block';
@@ -200,4 +215,3 @@ function diagnose() {
 </script>
 </body>
 </html>
-
