@@ -1,1 +1,245 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>経理人材診断</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 10px;
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .question-text {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .option-label:hover {
+            background: #e9ecef;
+        }
+        .option-label input {
+            margin-right: 10px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #219653;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #ebf7ee;
+            border: 2px solid #27ae60;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+        }
+        .result-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 経理人材診断 📊</h1>
+    <form id="quizForm">
+        <!-- 質問1 -->
+        <div class="question-block">
+            <p class="question-text">Q1. 説明にはなるべく定量的な表現を用いるべきだと思う</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q1" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q1" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q1" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q1" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q1" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問2 -->
+        <div class="question-block">
+            <p class="question-text">Q2. 今月のことより、来年以降のことなど長期的な計画を立てるのが好きだ</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q2" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q2" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q2" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q2" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q2" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問3 -->
+        <div class="question-block">
+            <p class="question-text">Q3. 主役ではなくても大きなプロジェクトに関わることにやりがいを感じる</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q3" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q3" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q3" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q3" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q3" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <!-- 質問4 -->
+        <div class="question-block">
+            <p class="question-text">Q4. 疑問に思ったことは放置したくない</p>
+            <div class="options">
+                <label class="option-label"><input type="radio" name="q4" value="5" required> まったくそのとおり</label>
+                <label class="option-label"><input type="radio" name="q4" value="4"> かなりそのとおり</label>
+                <label class="option-label"><input type="radio" name="q4" value="3"> どちらともいえない</label>
+                <label class="option-label"><input type="radio" name="q4" value="2"> あまりそのとおりではない</label>
+                <label class="option-label"><input type="radio" name="q4" value="1"> まったくちがう</label>
+            </div>
+        </div>
+
+        <button type="button" onclick="diagnose()">診断結果を見る</button>
+    </form>
+
+    <div id="result">
+        <p class="result-title">あなたの経理タイプは...</p>
+        <h2 id="typeTitle"></h2>
+        <p id="typeDescription"></p>
+    </div>
+</div>
+
+<script>
+function diagnose() {
+    const form = document.getElementById('quizForm');
+    
+    // 全て回答されているかチェック
+    if (!form.reportValidity()) {
+        return; 
+    }
+
+    // 各質問の選択された値（点数）を取得
+    const score1 = parseInt(document.querySelector('input[name="q1"]:checked').value);
+    const score2 = parseInt(document.querySelector('input[name="q2"]:checked').value);
+    const score3 = parseInt(document.querySelector('input[name="q3"]:checked').value);
+    const score4 = parseInt(document.querySelector('input[name="q4"]:checked').value);
+
+    // 合計点を計算
+    const totalScore = score1 + score2 + score3 + score4;
+
+    let finalName = "";
+    let finalDesc = "";
+
+    // 各タイプの設定（Q1=財務分析、Q2=経営企画、Q3=予算管理、Q4=内部統制）
+    const types = [
+        { id: 1, name: "📊 財務分析型", score: score1, desc: "感情ではなく「数字」という客観的なデータを用いて状況を分析し、説得力のある説明ができるタイプ。経営の羅針盤となる存在です！" },
+        { id: 2, name: "🗺️ 経営企画型", score: score2, desc: "目先の数字にとらわれず、将来の予算編成や中期経営計画など、組織の『未来の地図』を描くことにワクワクする戦略家タイプです！" },
+        { id: 3, name: "🤝 予算管理型", score: score3, desc: "大規模なプロジェクトや組織全体の予算枠をコントロールし、主役を裏から支えながらリソースを最適化することにやりがいを感じるタイプです！" },
+        { id: 4, name: "🛡️ 内部統制型", score: score4, desc: "わずかな数字の不一致や規程とのズレを見逃さず、徹底的に原因を究明するタイプ。リスクを未然に防ぎ、組織のガバナンスを守る最後の砦です！" }
+    ];
+
+    // 1. すべてのスコアが低い（合計10点以下）場合の判定
+    if (totalScore <= 10) {
+        finalName = "📝 出納決算型";
+        finalDesc = "派手な分析や未来の計画よりも、日々の仕訳や伝票起票、月次・年次決算をルール通りに淡々と、かつ1円の狂いもなく正確にこなすことが得意な、経理の超・王道タイプです！";
+    } else {
+        // 最高点を見つける
+        let maxScore = Math.max(score1, score2, score3, score4);
+        
+        // 最高点と同じスコアを持つタイプをすべて抽出
+        let maxTypes = types.filter(t => t.score === maxScore);
+
+        if (maxTypes.length === 1) {
+            // 【単独1位の場合】そのままそのタイプを出力
+            finalName = maxTypes[0].name;
+            finalDesc = maxTypes[0].desc;
+        } else {
+            // 【同点がある場合】マトリックスを元に判定
+            // 該当するタイプのIDの組み合わせを確認
+            const ids = maxTypes.map(t => t.id);
+
+            if (ids.includes(1)) {
+                // Q1(財務分析)が含まれる同点はすべて「財務分析型」を優先
+                finalName = types[0].name;
+                finalDesc = types[0].desc;
+            } else if (ids.includes(2) && ids.includes(3)) {
+                // Q2 + Q3 ➔ 経営企画型
+                finalName = types[1].name;
+                finalDesc = types[1].desc;
+            } else if (ids.includes(2) && ids.includes(4)) {
+                // Q2 + Q4 ➔ 内部統制型
+                finalName = types[3].name;
+                finalDesc = types[3].desc;
+            } else if (ids.includes(3) && ids.includes(4)) {
+                // Q3 + Q4 ➔ 予算管理型
+                finalName = types[2].name;
+                finalDesc = types[2].desc;
+            } else {
+                // 万が一の安全弁
+                finalName = maxTypes[0].name;
+                finalDesc = maxTypes[0].desc;
+            }
+        }
+    }
+
+    // 結果を表示
+    document.getElementById('typeTitle').innerText = finalName;
+    document.getElementById('typeDescription').innerText = finalDesc;
+    
+    const resultDiv = document.getElementById('result');
+    resultDiv.style.display = 'block';
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
