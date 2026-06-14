@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（0判定バグ修正版）</title>
+    <title>筆算割り算ゲーム（完全スッキリ版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -130,7 +130,7 @@
 <body>
 
     <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
-    <p>頭の中で引き算をして、あまりの数を入れていこう！</p>
+    <p>無駄なマスをなくしたスピード暗算版！</p>
 
     <div class="math-grid" id="math-grid-screen"></div>
 
@@ -157,10 +157,9 @@
     <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
 
     <script>
-        const boxOrder = ['ans1', 'ans2', 'sub1_1', 'sub1_2', 'rem1'];
+        // ★入力マスを合計「4つ」に厳選（常に0になる百の位の下を削除！）
+        const boxOrder = ['ans1', 'ans2', 'sub1', 'rem1'];
         let currentSelectedId = 'ans1';
-        
-        // 数値として正解を保持するオブジェクトに変更
         let correctValues = {};
 
         function generateProblem() {
@@ -174,7 +173,7 @@
 
             const q_tens = Math.floor(upper_two_digits / divisor);       
             const mult1 = divisor * q_tens;                               
-            const sub1_total = upper_two_digits - mult1; // 1回目の引き算の答え（例: 1）
+            const sub1_total = upper_two_digits - mult1; // 1回目の引き算（絶対に0〜9の1桁になる）
 
             const q_ones = Math.floor(Math.random() * 10);             
             const mult2 = divisor * q_ones;                               
@@ -183,11 +182,11 @@
             const d3_display = mult2 + final_remainder; 
             const d3 = d3_display % 10;
 
-            // ★ 正解を「文字列」ではなく「実際の計算結果の数値」で記憶
+            // 正解を数値で保持
             correctValues = {
                 'ans1': q_tens,
                 'ans2': q_ones,
-                'sub1_total': sub1_total, // 2マス合わせてこの数字になればOKにする
+                'sub1': sub1_total, 
                 'rem1': final_remainder
             };
 
@@ -202,8 +201,7 @@
                 <div style="grid-column:4; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d2}</div>
                 <div style="grid-column:5; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d3}</div>
 
-                <div id="sub1_1" class="blank" style="grid-column:3; grid-row:3;" onclick="selectBox('sub1_1')"></div>
-                <div id="sub1_2" class="blank" style="grid-column:4; grid-row:3;" onclick="selectBox('sub1_2')"></div>
+                <div id="sub1" class="blank" style="grid-column:4; grid-row:3;" onclick="selectBox('sub1')"></div>
                 <div style="grid-column:5; grid-row:3;">${d3}</div>
 
                 <div class="grid-line-1"></div>
@@ -249,27 +247,19 @@
         function checkAnswer() {
             const messageArea = document.getElementById('result-message');
             
-            // 各マスの入力値を取得（空欄は0として扱う）
             const ans1_user = parseInt(document.getElementById('ans1').innerText) || 0;
             const ans2_user = parseInt(document.getElementById('ans2').innerText) || 0;
-            
-            // ★ここが修正ポイント：2つのマスを合算して1つの数値にする
-            const sub1_1_str = document.getElementById('sub1_1').innerText;
-            const sub1_2_str = document.getElementById('sub1_2').innerText;
-            // 両方空欄なら0、片方だけならその数字、両方あればドッキング（例: "0"と"1"→1、""と"1"→1）
-            const sub1_user = parseInt((sub1_1_str + sub1_2_str)) || 0;
-            
+            const sub1_user = parseInt(document.getElementById('sub1').innerText) || 0;
             const rem1_user = parseInt(document.getElementById('rem1').innerText) || 0;
 
-            // 数値同士で綺麗に判定
             if (
                 ans1_user === correctValues.ans1 &&
                 ans2_user === correctValues.ans2 &&
-                sub1_user === correctValues.sub1_total &&
+                sub1_user === correctValues.sub1 &&
                 rem1_user === correctValues.rem1
             ) {
                 messageArea.style.color = '#4CAF50';
-                messageArea.innerText = '正解！🎉 すごいスピード！';
+                messageArea.innerText = '正解！🎉 カンペキです！';
                 document.getElementById('next-button').style.display = 'block';
             } else {
                 messageArea.style.color = '#f44336';
