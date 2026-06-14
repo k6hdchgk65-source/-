@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（レイアウト最適化版）</title>
+    <title>筆算割り算ゲーム（3桁÷1桁版）</title>
     <style>
-        /* スマートフォンでもスクロールが発生しにくいように全体の余白を調整 */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -26,7 +25,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             font-size: 24px;
             font-family: 'Courier New', Courier, monospace;
-            line-height: 1.5;
+            line-height: 1.4;
             text-align: right;
             margin-bottom: 10px;
         }
@@ -46,7 +45,16 @@
             border-color: #ff5722;
             background-color: #ffe0b2;
         }
-        /* 結果表示エリア（高さを固定してガタつきを防ぐ） */
+        
+        /* 筆算の引き算の線 */
+        .math-line {
+            border-top: 2px solid #333; 
+            display: inline-block; 
+            width: 130px;
+            margin: 3px 0;
+        }
+
+        /* 結果表示エリア */
         #result-message {
             font-size: 18px;
             font-weight: bold;
@@ -54,7 +62,7 @@
             margin-bottom: 10px;
         }
 
-        /* ★キーパッドと答え合わせボタンを横並びにするコンテナ */
+        /* 操作エリアのコンテナ */
         .controls-container {
             display: flex;
             justify-content: center;
@@ -63,7 +71,7 @@
             margin: 0 auto;
         }
 
-        /* 数字ボタン用のグリッド（4列：1〜9と0・消す） */
+        /* 数字ボタン用のグリッド */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 60px);
@@ -81,15 +89,13 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .key:active { background: #1976D2; }
-        
-        /* 消すボタン（0の右隣に配置） */
         .key.clear { background: #f44336; }
         .key.clear:active { background: #d32f2f; }
         
-        /* ★答え合わせボタンを縦長にして右側に配置 */
+        /* 答え合わせボタン */
         .check-btn {
             width: 80px;
-            height: 244px; /* 数字ボタン4段分（55px*4 + 隙間8px*3）に合わせる */
+            height: 244px;
             font-size: 18px;
             background-color: #4CAF50;
             color: white;
@@ -98,28 +104,37 @@
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            /* 文字を縦書きっぽく見せる（または折り返し） */
             writing-mode: vertical-rl;
             text-orientation: upright;
             letter-spacing: 4px;
             padding: 0;
         }
         .check-btn:active { background-color: #388E3C; }
+
+        /* 「つぎの問題へ」ボタン */
+        .next-btn {
+            display: none;
+            margin: 15px auto 0 auto;
+            padding: 10px 30px;
+            font-size: 18px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .next-btn:active { background-color: #e65100; }
     </style>
 </head>
 <body>
 
-    <h2>筆算クイズ</h2>
-    <p>数字を入力して右の「答え合わせ」を押してね</p>
+    <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
+    <p>すべての空欄をうめて、答え合わせを押してね！</p>
 
-    <div class="math-container">
-        <div id="box1" class="blank selected" onclick="selectBox('box1')"></div><br>
-        <span style="border-top: 2px solid #333; padding-top: 5px;">７ ) ２ ４</span><br>
-        <div id="box2" class="blank" onclick="selectBox('box2')"></div>
-        <div id="box3" class="blank" onclick="selectBox('box3')"></div><br>
-        <span style="border-top: 2px solid #333; display:inline-block; width:80px;"></span><br>
-        <div id="box4" class="blank" onclick="selectBox('box4')"></div>
-    </div>
+    <div class="math-container" id="math-screen">
+        </div>
 
     <div id="result-message"></div>
 
@@ -142,16 +157,97 @@
         <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
     </div>
 
-    <script>
-        const boxOrder = ['box1', 'box2', 'box3', 'box4'];
-        let currentSelectedId = 'box1';
+    <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
 
-        const correctAnswers = {
-            'box1': '3',
-            'box2': '2',
-            'box3': '1',
-            'box4': '3'
-        };
+    <script>
+        // 入力する順番の定義（マスのIDを上から順に並べる）
+        const boxOrder = [
+            'ans1', 'ans2',       // 商の十の位、一の位
+            'm1_1', 'm1_2',       // 1回目の掛け算（十の位、一の位）
+            'sub1',               // 1回目の引き算の答え
+            'm2_1', 'm2_2',       // 2回目の掛け算（十の位、一の位）
+            'rem1'                // 最後のあまり
+        ];
+        
+        let currentSelectedId = 'ans1';
+        let correctAnswers = {};
+
+        function generateProblem() {
+            document.getElementById('result-message').innerText = '';
+            document.getElementById('next-button').style.display = 'none';
+
+            // --- 3桁÷1桁のロジック生成 ---
+            const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
+            const q_tens = Math.floor(Math.random() * 8) + 1;  // 商の十の位: 1〜8
+            const q_ones = Math.floor(Math.random() * 9) + 0;  // 商の一の位: 0〜9
+            const total_quotient = q_tens * 10 + q_ones;       // 合計の商 (2桁)
+
+            // 1回目の掛け算（割る数 × 商の十の位）
+            const mult1 = divisor * q_tens;
+            
+            // 1回目の引き算の残りと、割られる数の一の位を合わせた数（2回目の計算対象）
+            // これが割る数より大きくなるように、かつ2桁になるように調整
+            const rem_step1 = Math.floor(Math.random() * 5) + 1; // 1回目の引き算の余り
+            const d_ones = Math.floor(Math.random() * 10);      // 割られる数の一の位
+
+            // 2回目の引き算（割る数 × 商の一の位）
+            const mult2 = divisor * q_ones;
+            // 最終的な余り
+            const final_remainder = Math.floor(Math.random() * (divisor - 1)) + 1;
+
+            // 逆算して「割られる数」を正確に決定
+            // 割られる数 = (mult1 * 10) + mult2 + final_remainder
+            const dividend = (mult1 * 10) + mult2 + final_remainder;
+
+            // 桁の分解
+            const d1 = Math.floor(dividend / 100);       // 百の位
+            const d2 = Math.floor((dividend % 100) / 10); // 十の位
+            const d3 = dividend % 10;                     // 一の位
+
+            // 途中の引き算の答え（下ろしてきた一の位の数字を含む）
+            const step2_target = (dividend - (mult1 * 100)); 
+            const sub1_val = Math.floor(step2_target / 10); // 引き算単体の結果
+
+            // 正解の設定
+            correctAnswers = {
+                'ans1': q_tens.toString(),
+                'ans2': q_ones.toString(),
+                'm1_1': Math.floor(mult1 / 10).toString(),
+                'm1_2': (mult1 % 10).toString(),
+                'sub1': sub1_val.toString(),
+                'm2_1': Math.floor(mult2 / 10).toString(),
+                'm2_2': (mult2 % 10).toString(),
+                'rem1': final_remainder.toString()
+            };
+
+            // 筆算画面の描画（スペース調整用に透明文字や全角スペースを使用）
+            const mathScreen = document.getElementById('math-screen');
+            mathScreen.innerHTML = `
+                <span style="visibility:hidden;">０) </span>
+                <div id="ans1" class="blank" onclick="selectBox('ans1')"></div>
+                <div id="ans2" class="blank" onclick="selectBox('ans2')"></div><br>
+                
+                <span style="border-top: 2px solid #333; padding-top: 3px;">${divisor} ) ${d1} ${d2} ${d3}</span><br>
+                
+                <div id="m1_1" class="blank" onclick="selectBox('m1_1')"></div>
+                <div id="m1_2" class="blank" onclick="selectBox('m1_2')"></div>
+                <span style="visibility:hidden;">０</span><br>
+                <span class="math-line"></span><br>
+                
+                <div id="sub1" class="blank" onclick="selectBox('sub1')"></div>
+                <span>${d3}</span><br>
+                
+                <div id="m2_1" class="blank" onclick="selectBox('m2_1')"></div>
+                <div id="m2_2" class="blank" onclick="selectBox('m2_2')"></div><br>
+                <span class="math-line"></span><br>
+                
+                <div id="rem1" class="blank" onclick="selectBox('rem1')"></div>
+            `;
+
+            // 初期選択
+            currentSelectedId = 'ans1';
+            document.getElementById('ans1').classList.add('selected');
+        }
 
         function selectBox(id) {
             document.getElementById(currentSelectedId).classList.remove('selected');
@@ -161,6 +257,7 @@
 
         function inputNum(num) {
             const targetBox = document.getElementById(currentSelectedId);
+            if(!targetBox) return;
             targetBox.innerText = num;
 
             const currentIndex = boxOrder.indexOf(currentSelectedId);
@@ -172,6 +269,7 @@
 
         function clearBox() {
             const targetBox = document.getElementById(currentSelectedId);
+            if(!targetBox) return;
             targetBox.innerText = '';
             
             const currentIndex = boxOrder.indexOf(currentSelectedId);
@@ -198,11 +296,14 @@
             if (isAllCorrect) {
                 messageArea.style.color = '#4CAF50';
                 messageArea.innerText = '正解！🎉 すばらしい！';
+                document.getElementById('next-button').style.display = 'block';
             } else {
                 messageArea.style.color = '#f44336';
                 messageArea.innerText = 'おや？もう一度考えてみよう🤔';
             }
         }
+
+        window.onload = generateProblem;
     </script>
 
 </body>
