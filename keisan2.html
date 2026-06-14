@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（完全スッキリ版）</title>
+    <title>筆算割り算ゲーム（完全修正版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -130,7 +130,7 @@
 <body>
 
     <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
-    <p>無駄なマスをなくしたスピード暗算版！</p>
+    <p>頭の中で引き算をして、あまりの数を入れていこう！</p>
 
     <div class="math-grid" id="math-grid-screen"></div>
 
@@ -157,7 +157,6 @@
     <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
 
     <script>
-        // ★入力マスを合計「4つ」に厳選（常に0になる百の位の下を削除！）
         const boxOrder = ['ans1', 'ans2', 'sub1', 'rem1'];
         let currentSelectedId = 'ans1';
         let correctValues = {};
@@ -166,23 +165,37 @@
             document.getElementById('result-message').innerText = '';
             document.getElementById('next-button').style.display = 'none';
 
+            // 1. 先に「割る数」と「商（答え）」を完全にランダムで作る
             const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
-            const d1 = Math.floor(Math.random() * (divisor - 1)) + 1; // 百の位
-            const d2 = Math.floor(Math.random() * 10); // 十の位
+            
+            // 商が必ず2桁（10〜99）になるように設定
+            const q_tens = Math.floor(Math.random() * 9) + 1;  // 十の位: 1〜9
+            const q_ones = Math.floor(Math.random() * 10);     // 一の位: 0〜9
+            const total_quotient = q_tens * 10 + q_ones;       // 合計の商
+
+            // あまりを 0 〜 (割る数 - 1) の間で完全ランダム生成（★割り切れる0も含むように修正！）
+            const final_remainder = Math.floor(Math.random() * divisor); 
+
+            // 2. 算数の基本式 「割る数 × 商 + あまり = 割られる数」 で正確に問題を合成
+            const dividend = (divisor * total_quotient) + final_remainder;
+
+            // ★【商が3桁になる問題の排除ガード】
+            // 万が一、百の位が割る数以上になって商が3桁になってしまう場合は作り直す
+            const d1 = Math.floor(dividend / 100);       // 百の位
+            if (d1 >= divisor) {
+                generateProblem();
+                return;
+            }
+
+            const d2 = Math.floor((dividend % 100) / 10); // 十の位
+            const d3 = dividend % 10;                     // 一の位
+
+            // 3. 1回目の引き算の答えを正しく計算
             const upper_two_digits = d1 * 10 + d2;
+            const mult1 = divisor * q_tens;
+            const sub1_total = upper_two_digits - mult1;
 
-            const q_tens = Math.floor(upper_two_digits / divisor);       
-            const mult1 = divisor * q_tens;                               
-            const sub1_total = upper_two_digits - mult1; // 1回目の引き算（絶対に0〜9の1桁になる）
-
-            const q_ones = Math.floor(Math.random() * 10);             
-            const mult2 = divisor * q_ones;                               
-            const final_remainder = Math.floor(Math.random() * (divisor - 1)) + 1; // 最終余り
-
-            const d3_display = mult2 + final_remainder; 
-            const d3 = d3_display % 10;
-
-            // 正解を数値で保持
+            // 正解データをセット
             correctValues = {
                 'ans1': q_tens,
                 'ans2': q_ones,
