@@ -3,45 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（完全修正版）</title>
+    <title>筆算割り算ゲーム（iPad横画面対応版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: #f0f0f0;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
         
-        h2 { margin: 10px 0 5px 0; font-size: 20px; }
-        p { margin: 0 0 10px 0; font-size: 14px; color: #555; }
+        h2 { margin: 5px 0; font-size: 24px; }
+        p { margin: 0 0 15px 0; font-size: 16px; color: #555; }
+
+        /* 全体のコンテナ：iPad横向きやPCでは左右に並べる */
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 40px; /* 筆算とキーパッドの間の広めのスペース */
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 95%;
+        }
 
         /* 筆算の表示エリア（Gridレイアウト） */
         .math-grid {
-            background: white;
             display: inline-grid;
-            grid-template-columns: repeat(6, 35px);
-            grid-template-rows: repeat(4, 40px);
-            gap: 2px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-size: 26px;
+            grid-template-columns: repeat(6, 45px); /* iPad向けにマス目を少し大きく(35px→45px) */
+            grid-template-rows: repeat(4, 50px);    /* 縦も40px→50pxに拡大 */
+            gap: 4px;
+            font-size: 32px; /* 数字をより見やすく */
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             align-items: center;
             justify-items: center;
-            margin-bottom: 10px;
         }
 
         /* 空欄（入力ボックス）のスタイル */
         .blank {
-            width: 30px;
-            height: 35px;
+            width: 40px;
+            height: 45px;
             border: 2px solid #333;
-            border-radius: 5px;
+            border-radius: 6px;
             text-align: center;
-            line-height: 35px;
+            line-height: 45px;
             background-color: #fffde7;
             cursor: pointer;
             box-sizing: border-box;
@@ -56,74 +71,99 @@
             grid-column: 2 / 6;
             grid-row: 3;
             width: 100%;
-            border-bottom: 2px solid #333;
+            border-bottom: 3px solid #333;
             align-self: start;
+        }
+
+        /* 右側の操作エリアをまとめる縦コンテナ */
+        .right-side-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
         /* 結果表示エリア */
         #result-message {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            height: 25px;
-            margin-bottom: 10px;
+            height: 30px;
         }
 
-        /* 操作エリア */
+        /* 操作エリアのレイアウト */
         .controls-container {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            max-width: 360px;
-            margin: 0 auto;
+            gap: 15px;
         }
         .keypad {
             display: grid;
-            grid-template-columns: repeat(3, 60px);
-            gap: 8px;
+            grid-template-columns: repeat(3, 70px); /* ボタンも少し大きく */
+            gap: 10px;
         }
         .key {
-            width: 60px;
-            height: 55px;
-            font-size: 20px;
+            width: 70px;
+            height: 65px;
+            font-size: 24px;
             background: #2196F3;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
         }
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
         
         .check-btn {
-            width: 80px;
-            height: 244px;
-            font-size: 18px;
+            width: 90px;
+            height: 290px; /* キーパッドの高さ拡大に合わせて調整 */
+            font-size: 22px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
             writing-mode: vertical-rl;
             text-orientation: upright;
-            letter-spacing: 4px;
+            letter-spacing: 6px;
         }
         .check-btn:active { background-color: #388E3C; }
 
         .next-btn {
             display: none;
-            margin: 15px auto 0 auto;
-            padding: 10px 30px;
-            font-size: 18px;
+            margin-top: 15px;
+            padding: 12px 40px;
+            font-size: 20px;
             background-color: #ff9800;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        /* 📱 縦向きのスマホなどで見たとき用のレスポンシブ対応（自動で縦並びに戻る） */
+        @media (max-width: 650px) {
+            .game-container {
+                flex-direction: column;
+                padding: 15px;
+                gap: 15px;
+            }
+            .check-btn {
+                height: auto;
+                width: 230px;
+                writing-mode: horizontal-tb;
+                padding: 15px 0;
+                letter-spacing: 2px;
+            }
+            .controls-container {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -132,29 +172,35 @@
     <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
     <p>頭の中で引き算をして、あまりの数を入れていこう！</p>
 
-    <div class="math-grid" id="math-grid-screen"></div>
+    <div class="game-container">
+        
+        <div class="math-grid" id="math-grid-screen"></div>
 
-    <div id="result-message"></div>
+        <div class="right-side-controls">
+            <div id="result-message"></div>
 
-    <div class="controls-container">
-        <div class="keypad">
-            <button class="key" onclick="inputNum(1)">1</button>
-            <button class="key" onclick="inputNum(2)">2</button>
-            <button class="key" onclick="inputNum(3)">3</button>
-            <button class="key" onclick="inputNum(4)">4</button>
-            <button class="key" onclick="inputNum(5)">5</button>
-            <button class="key" onclick="inputNum(6)">6</button>
-            <button class="key" onclick="inputNum(7)">7</button>
-            <button class="key" onclick="inputNum(8)">8</button>
-            <button class="key" onclick="inputNum(9)">9</button>
-            <div style="width:60px;"></div> 
-            <button class="key" onclick="inputNum(0)">0</button>
-            <button class="key clear" onclick="clearBox()">消</button>
+            <div class="controls-container">
+                <div class="keypad">
+                    <button class="key" onclick="inputNum(1)">1</button>
+                    <button class="key" onclick="inputNum(2)">2</button>
+                    <button class="key" onclick="inputNum(3)">3</button>
+                    <button class="key" onclick="inputNum(4)">4</button>
+                    <button class="key" onclick="inputNum(5)">5</button>
+                    <button class="key" onclick="inputNum(6)">6</button>
+                    <button class="key" onclick="inputNum(7)">7</button>
+                    <button class="key" onclick="inputNum(8)">8</button>
+                    <button class="key" onclick="inputNum(9)">9</button>
+                    <div style="width:70px;"></div> 
+                    <button class="key" onclick="inputNum(0)">0</button>
+                    <button class="key clear" onclick="clearBox()">消</button>
+                </div>
+                <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
+            </div>
+
+            <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
         </div>
-        <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
-    </div>
 
-    <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
+    </div>
 
     <script>
         const boxOrder = ['ans1', 'ans2', 'sub1', 'rem1'];
@@ -165,22 +211,14 @@
             document.getElementById('result-message').innerText = '';
             document.getElementById('next-button').style.display = 'none';
 
-            // 1. 先に「割る数」と「商（答え）」を完全にランダムで作る
             const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
-            
-            // 商が必ず2桁（10〜99）になるように設定
             const q_tens = Math.floor(Math.random() * 9) + 1;  // 十の位: 1〜9
             const q_ones = Math.floor(Math.random() * 10);     // 一の位: 0〜9
             const total_quotient = q_tens * 10 + q_ones;       // 合計の商
 
-            // あまりを 0 〜 (割る数 - 1) の間で完全ランダム生成（★割り切れる0も含むように修正！）
             const final_remainder = Math.floor(Math.random() * divisor); 
-
-            // 2. 算数の基本式 「割る数 × 商 + あまり = 割られる数」 で正確に問題を合成
             const dividend = (divisor * total_quotient) + final_remainder;
 
-            // ★【商が3桁になる問題の排除ガード】
-            // 万が一、百の位が割る数以上になって商が3桁になってしまう場合は作り直す
             const d1 = Math.floor(dividend / 100);       // 百の位
             if (d1 >= divisor) {
                 generateProblem();
@@ -190,12 +228,10 @@
             const d2 = Math.floor((dividend % 100) / 10); // 十の位
             const d3 = dividend % 10;                     // 一の位
 
-            // 3. 1回目の引き算の答えを正しく計算
             const upper_two_digits = d1 * 10 + d2;
             const mult1 = divisor * q_tens;
             const sub1_total = upper_two_digits - mult1;
 
-            // 正解データをセット
             correctValues = {
                 'ans1': q_tens,
                 'ans2': q_ones,
@@ -209,7 +245,7 @@
                 <div id="ans2" class="blank" style="grid-column:5; grid-row:1;" onclick="selectBox('ans2')"></div>
                 
                 <div style="grid-column:1; grid-row:2; justify-self:end;">${divisor}</div>
-                <div style="grid-column:2; grid-row:2; border-top:2px solid #333; border-left:2px solid #333; border-top-left-radius:8px; height:100%; width:100%; box-sizing:border-box; margin-top:12px;"></div>
+                <div style="grid-column:2; grid-row:2; border-top:2px solid #333; border-left:2px solid #333; border-top-left-radius:8px; height:100%; width:100%; box-sizing:border-box; margin-top:16px;"></div>
                 <div style="grid-column:3; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d1}</div>
                 <div style="grid-column:4; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d2}</div>
                 <div style="grid-column:5; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d3}</div>
