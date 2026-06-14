@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（試作）</title>
+    <title>筆算割り算ゲーム（自動移動版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             font-size: 24px;
-            font-family: 'Courier New', Courier, monospace; /* 等幅フォントで位置を揃える */
+            font-family: 'Courier New', Courier, monospace;
             line-height: 1.5;
             text-align: right;
             margin-bottom: 20px;
@@ -67,8 +67,8 @@
 </head>
 <body>
 
-    <h2>筆算クイズ</h2>
-    <p>空欄をクリックして、下のボタンで数字を入れてね！</p>
+    <h2>筆算クイズ（自動移動）</h2>
+    <p>数字を入力すると、自動で次の空欄に移動します</p>
 
     <div class="math-container">
         <div id="box1" class="blank selected" onclick="selectBox('box1')"></div><br>
@@ -94,14 +94,13 @@
     </div>
 
     <script>
-        // 現在どの空欄を選択しているかを記録する変数
+        // 空欄が進む順番を配列で定義しておく
+        const boxOrder = ['box1', 'box2', 'box3', 'box4'];
         let currentSelectedId = 'box1';
 
-        // 空欄を選択した時の動き
+        // 空欄を手動で選択した時の動き
         function selectBox(id) {
-            // これまで選択されていたボックスの「選択中スタイル」を解除
             document.getElementById(currentSelectedId).classList.remove('selected');
-            // 新しく選択されたボックスを記録してスタイルを適用
             currentSelectedId = id;
             document.getElementById(currentSelectedId).classList.add('selected');
         }
@@ -110,12 +109,29 @@
         function inputNum(num) {
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = num;
+
+            // ★入力したあと、自動で次の空欄に移動する処理
+            // 現在のボックスが、配列の何番目にあるかを探す
+            const currentIndex = boxOrder.indexOf(currentSelectedId);
+            
+            // もし次のボックスが配列内にあれば、そこに移動する
+            if (currentIndex < boxOrder.length - 1) {
+                const nextBoxId = boxOrder[currentIndex + 1];
+                selectBox(nextBoxId);
+            }
         }
 
         // 消すボタンを押した時の動き
         function clearBox() {
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = '';
+            
+            // （おまけ）文字を消したときは、1つ前のボックスに戻ると親切です
+            const currentIndex = boxOrder.indexOf(currentSelectedId);
+            if (currentIndex > 0) {
+                const prevBoxId = boxOrder[currentIndex - 1];
+                selectBox(prevBoxId);
+            }
         }
     </script>
 
