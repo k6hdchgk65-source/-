@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（iPad横画面対応版）</title>
+    <title>筆算割り算ゲーム（ボタン位置修正版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: #f0f0f0;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,31 +18,31 @@
             box-sizing: border-box;
         }
         
-        h2 { margin: 5px 0; font-size: 24px; }
-        p { margin: 0 0 15px 0; font-size: 16px; color: #555; }
+        h2 { margin: 5px 0; font-size: 22px; }
+        p { margin: 0 0 15px 0; font-size: 14px; color: #555; }
 
-        /* 全体のコンテナ：iPad横向きやPCでは左右に並べる */
+        /* 全体のコンテナ（iPad横向きなどの広い画面用） */
         .game-container {
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 40px; /* 筆算とキーパッドの間の広めのスペース */
+            gap: 30px;
             background: #ffffff;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
             box-shadow: 0 6px 12px rgba(0,0,0,0.1);
             max-width: 900px;
             width: 95%;
         }
 
-        /* 筆算の表示エリア（Gridレイアウト） */
+        /* 筆算の表示エリア */
         .math-grid {
             display: inline-grid;
-            grid-template-columns: repeat(6, 45px); /* iPad向けにマス目を少し大きく(35px→45px) */
-            grid-template-rows: repeat(4, 50px);    /* 縦も40px→50pxに拡大 */
+            grid-template-columns: repeat(6, 45px);
+            grid-template-rows: repeat(4, 50px);
             gap: 4px;
-            font-size: 32px; /* 数字をより見やすく */
+            font-size: 32px;
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             align-items: center;
@@ -75,36 +75,39 @@
             align-self: start;
         }
 
-        /* 右側の操作エリアをまとめる縦コンテナ */
+        /* 右側（または下側）の操作エリア */
         .right-side-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
         /* 結果表示エリア */
         #result-message {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            height: 30px;
+            height: 25px;
         }
 
-        /* 操作エリアのレイアウト */
+        /* ★キーパッドと答え合わせボタンを「常に横並び」にするコンテナ */
         .controls-container {
             display: flex;
+            flex-direction: row; /* 常に横並びを強制 */
             justify-content: center;
-            gap: 15px;
+            align-items: center;
+            gap: 12px;
         }
+
         .keypad {
             display: grid;
-            grid-template-columns: repeat(3, 70px); /* ボタンも少し大きく */
-            gap: 10px;
+            grid-template-columns: repeat(3, 65px);
+            gap: 8px;
         }
         .key {
-            width: 70px;
-            height: 65px;
-            font-size: 24px;
+            width: 65px;
+            height: 60px;
+            font-size: 22px;
             background: #2196F3;
             color: white;
             border: none;
@@ -115,10 +118,11 @@
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
         
+        /* ★答え合わせボタン：縦・横どちらでもキーパッドの右に綺麗に収まる高さに調整 */
         .check-btn {
-            width: 90px;
-            height: 290px; /* キーパッドの高さ拡大に合わせて調整 */
-            font-size: 22px;
+            width: 75px;
+            height: 264px; /* キーパッド全体の高さ（60px * 4行 + 隙間）にジャストフィット */
+            font-size: 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -128,15 +132,15 @@
             box-shadow: 0 3px 6px rgba(0,0,0,0.15);
             writing-mode: vertical-rl;
             text-orientation: upright;
-            letter-spacing: 6px;
+            letter-spacing: 4px;
         }
         .check-btn:active { background-color: #388E3C; }
 
         .next-btn {
             display: none;
-            margin-top: 15px;
-            padding: 12px 40px;
-            font-size: 20px;
+            margin-top: 10px;
+            padding: 10px 35px;
+            font-size: 18px;
             background-color: #ff9800;
             color: white;
             border: none;
@@ -146,24 +150,14 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
-        /* 📱 縦向きのスマホなどで見たとき用のレスポンシブ対応（自動で縦並びに戻る） */
+        /* 📱 画面の幅が狭い時（縦向きスマホなど）のレスポンシブ対応 */
         @media (max-width: 650px) {
             .game-container {
-                flex-direction: column;
+                flex-direction: column; /* 筆算と操作エリアは上下に並べる */
                 padding: 15px;
                 gap: 15px;
             }
-            .check-btn {
-                height: auto;
-                width: 230px;
-                writing-mode: horizontal-tb;
-                padding: 15px 0;
-                letter-spacing: 2px;
-            }
-            .controls-container {
-                flex-direction: column;
-                align-items: center;
-            }
+            /* 縦画面でも、キーパッドと答え合わせボタンの横並び関係は壊れません */
         }
     </style>
 </head>
@@ -190,7 +184,7 @@
                     <button class="key" onclick="inputNum(7)">7</button>
                     <button class="key" onclick="inputNum(8)">8</button>
                     <button class="key" onclick="inputNum(9)">9</button>
-                    <div style="width:70px;"></div> 
+                    <div style="width:65px;"></div> 
                     <button class="key" onclick="inputNum(0)">0</button>
                     <button class="key clear" onclick="clearBox()">消</button>
                 </div>
@@ -211,22 +205,22 @@
             document.getElementById('result-message').innerText = '';
             document.getElementById('next-button').style.display = 'none';
 
-            const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
-            const q_tens = Math.floor(Math.random() * 9) + 1;  // 十の位: 1〜9
-            const q_ones = Math.floor(Math.random() * 10);     // 一の位: 0〜9
-            const total_quotient = q_tens * 10 + q_ones;       // 合計の商
+            const divisor = Math.floor(Math.random() * 7) + 3; 
+            const q_tens = Math.floor(Math.random() * 9) + 1;  
+            const q_ones = Math.floor(Math.random() * 10);     
+            const total_quotient = q_tens * 10 + q_ones;       
 
             const final_remainder = Math.floor(Math.random() * divisor); 
             const dividend = (divisor * total_quotient) + final_remainder;
 
-            const d1 = Math.floor(dividend / 100);       // 百の位
+            const d1 = Math.floor(dividend / 100);       
             if (d1 >= divisor) {
                 generateProblem();
                 return;
             }
 
-            const d2 = Math.floor((dividend % 100) / 10); // 十の位
-            const d3 = dividend % 10;                     // 一の位
+            const d2 = Math.floor((dividend % 100) / 10); 
+            const d3 = dividend % 10;                     
 
             const upper_two_digits = d1 * 10 + d2;
             const mult1 = divisor * q_tens;
