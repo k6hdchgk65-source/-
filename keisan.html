@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（自動移動版）</title>
+    <title>筆算割り算ゲーム（答え合わせ機能付き）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,13 +41,20 @@
             border-color: #ff5722;
             background-color: #ffe0b2;
         }
+        /* 結果表示エリア */
+        #result-message {
+            font-size: 22px;
+            font-weight: bold;
+            height: 30px;
+            margin: 15px 0;
+        }
         /* キーパッド */
         .keypad {
             display: grid;
             grid-template-columns: repeat(5, 60px);
             gap: 10px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .key {
             width: 60px;
@@ -63,12 +69,29 @@
         }
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
+        
+        /* 答え合わせボタン */
+        .check-btn {
+            grid-column: span 5;
+            width: 100%;
+            height: 50px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-top: 5px;
+        }
+        .check-btn:active { background-color: #388E3C; }
     </style>
 </head>
 <body>
 
-    <h2>筆算クイズ（自動移動）</h2>
-    <p>数字を入力すると、自動で次の空欄に移動します</p>
+    <h2>筆算クイズ（答え合わせ付き）</h2>
+    <p>空欄をうめて「答え合わせ」ボタンを押してね！</p>
 
     <div class="math-container">
         <div id="box1" class="blank selected" onclick="selectBox('box1')"></div><br>
@@ -78,6 +101,8 @@
         <span style="border-top: 2px solid #333; display:inline-block; width:80px;"></span><br>
         <div id="box4" class="blank" onclick="selectBox('box4')"></div>
     </div>
+
+    <div id="result-message"></div>
 
     <div class="keypad">
         <button class="key" onclick="inputNum(1)">1</button>
@@ -91,12 +116,22 @@
         <button class="key" onclick="inputNum(9)">9</button>
         <button class="key" onclick="inputNum(0)">0</button>
         <button class="key clear" style="grid-column: span 5; width: 100%;" onclick="clearBox()">消す</button>
+        
+        <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
     </div>
 
     <script>
-        // 空欄が進む順番を配列で定義しておく
+        // 空欄が進む順番
         const boxOrder = ['box1', 'box2', 'box3', 'box4'];
         let currentSelectedId = 'box1';
+
+        // ★正しい答えのデータをオブジェクトで定義（24 ÷ 7 = 3 あまり 3）
+        const correctAnswers = {
+            'box1': '3', // 商
+            'box2': '2', // 引く数十の位
+            'box3': '1', // 引く数一の位
+            'box4': '3'  // あまり
+        };
 
         // 空欄を手動で選択した時の動き
         function selectBox(id) {
@@ -110,11 +145,8 @@
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = num;
 
-            // ★入力したあと、自動で次の空欄に移動する処理
-            // 現在のボックスが、配列の何番目にあるかを探す
+            // 自動で次の空欄に移動
             const currentIndex = boxOrder.indexOf(currentSelectedId);
-            
-            // もし次のボックスが配列内にあれば、そこに移動する
             if (currentIndex < boxOrder.length - 1) {
                 const nextBoxId = boxOrder[currentIndex + 1];
                 selectBox(nextBoxId);
@@ -126,11 +158,36 @@
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = '';
             
-            // （おまけ）文字を消したときは、1つ前のボックスに戻ると親切です
             const currentIndex = boxOrder.indexOf(currentSelectedId);
             if (currentIndex > 0) {
                 const prevBoxId = boxOrder[currentIndex - 1];
                 selectBox(prevBoxId);
+            }
+        }
+
+        // ★答え合わせボタンを押した時の動き
+        function checkAnswer() {
+            let isAllCorrect = true;
+            const messageArea = document.getElementById('result-message');
+
+            // すべてのボックスをループして、中身が正解と一致するか確かめる
+            for (let id of boxOrder) {
+                const userStatus = document.getElementById(id).innerText;
+                const correctAnswer = correctAnswers[id];
+
+                if (userStatus !== correctAnswer) {
+                    isAllCorrect = false; // 1つでも違えば不合格
+                    break;
+                }
+            }
+
+            // 判定結果を画面に表示
+            if (isAllCorrect) {
+                messageArea.style.color = '#4CAF50';
+                messageArea.innerText = '正解！🎉 すばらしい！';
+            } else {
+                messageArea.style.color = '#f44336';
+                messageArea.innerText = 'おや？もう一度考えてみよう🤔';
             }
         }
     </script>
