@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（掛け算なし版）</title>
+    <title>筆算割り算ゲーム（0判定バグ修正版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,7 +21,6 @@
             background: white;
             display: inline-grid;
             grid-template-columns: repeat(6, 35px);
-            /* 行数を4行（商、問題、1回目の引き算、最後のあまり）に縮小 */
             grid-template-rows: repeat(4, 40px);
             gap: 2px;
             padding: 20px;
@@ -53,7 +51,7 @@
             background-color: #ffe0b2;
         }
         
-        /* 筆算の横線（位置を調整） */
+        /* 筆算の横線 */
         .grid-line-1 {
             grid-column: 2 / 6;
             grid-row: 3;
@@ -159,16 +157,16 @@
     <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
 
     <script>
-        // ★入力マスの進む順番（掛け算のマスを排除し、5マスに削減しました）
         const boxOrder = ['ans1', 'ans2', 'sub1_1', 'sub1_2', 'rem1'];
         let currentSelectedId = 'ans1';
-        let correctAnswers = {};
+        
+        // 数値として正解を保持するオブジェクトに変更
+        let correctValues = {};
 
         function generateProblem() {
             document.getElementById('result-message').innerText = '';
             document.getElementById('next-button').style.display = 'none';
 
-            // 商が2桁になる問題の生成ロジック
             const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
             const d1 = Math.floor(Math.random() * (divisor - 1)) + 1; // 百の位
             const d2 = Math.floor(Math.random() * 10); // 十の位
@@ -176,7 +174,7 @@
 
             const q_tens = Math.floor(upper_two_digits / divisor);       
             const mult1 = divisor * q_tens;                               
-            const sub1_total = upper_two_digits - mult1; // 1回目の引き算の答え
+            const sub1_total = upper_two_digits - mult1; // 1回目の引き算の答え（例: 1）
 
             const q_ones = Math.floor(Math.random() * 10);             
             const mult2 = divisor * q_ones;                               
@@ -185,16 +183,14 @@
             const d3_display = mult2 + final_remainder; 
             const d3 = d3_display % 10;
 
-            // 正解データの割り当て
-            correctAnswers = {
-                'ans1': q_tens.toString(),
-                'ans2': q_ones.toString(),
-                'sub1_1': Math.floor(sub1_total / 10).toString(), 
-                'sub1_2': (sub1_total % 10).toString(),           
-                'rem1': final_remainder.toString()         
+            // ★ 正解を「文字列」ではなく「実際の計算結果の数値」で記憶
+            correctValues = {
+                'ans1': q_tens,
+                'ans2': q_ones,
+                'sub1_total': sub1_total, // 2マス合わせてこの数字になればOKにする
+                'rem1': final_remainder
             };
 
-            // Grid画面の描画（掛け算の行をなくしてすっきり配置）
             const gridScreen = document.getElementById('math-grid-screen');
             gridScreen.innerHTML = `
                 <div id="ans1" class="blank" style="grid-column:4; grid-row:1;" onclick="selectBox('ans1')"></div>
@@ -218,7 +214,6 @@
             document.getElementById('ans1').classList.add('selected');
         }
 
-        // 入力・削除・判定処理
         function selectBox(id) {
             const currentBox = document.getElementById(currentSelectedId);
             if(currentBox) currentBox.classList.remove('selected');
@@ -252,20 +247,27 @@
         }
 
         function checkAnswer() {
-            let isAllCorrect = true;
             const messageArea = document.getElementById('result-message');
+            
+            // 各マスの入力値を取得（空欄は0として扱う）
+            const ans1_user = parseInt(document.getElementById('ans1').innerText) || 0;
+            const ans2_user = parseInt(document.getElementById('ans2').innerText) || 0;
+            
+            // ★ここが修正ポイント：2つのマスを合算して1つの数値にする
+            const sub1_1_str = document.getElementById('sub1_1').innerText;
+            const sub1_2_str = document.getElementById('sub1_2').innerText;
+            // 両方空欄なら0、片方だけならその数字、両方あればドッキング（例: "0"と"1"→1、""と"1"→1）
+            const sub1_user = parseInt((sub1_1_str + sub1_2_str)) || 0;
+            
+            const rem1_user = parseInt(document.getElementById('rem1').innerText) || 0;
 
-            for (let id of boxOrder) {
-                const userStatus = document.getElementById(id).innerText;
-                const correctAnswer = correctAnswers[id];
-
-                if (userStatus !== correctAnswer) {
-                    isAllCorrect = false;
-                    break;
-                }
-            }
-
-            if (isAllCorrect) {
+            // 数値同士で綺麗に判定
+            if (
+                ans1_user === correctValues.ans1 &&
+                ans2_user === correctValues.ans2 &&
+                sub1_user === correctValues.sub1_total &&
+                rem1_user === correctValues.rem1
+            ) {
                 messageArea.style.color = '#4CAF50';
                 messageArea.innerText = '正解！🎉 すごいスピード！';
                 document.getElementById('next-button').style.display = 'block';
