@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（ボタン位置修正版）</title>
+    <title>筆算割り算ゲーム（カーソル順最適化版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -90,10 +90,10 @@
             height: 25px;
         }
 
-        /* ★キーパッドと答え合わせボタンを「常に横並び」にするコンテナ */
+        /* キーパッドと答え合わせボタンを常に横並びにするコンテナ */
         .controls-container {
             display: flex;
-            flex-direction: row; /* 常に横並びを強制 */
+            flex-direction: row;
             justify-content: center;
             align-items: center;
             gap: 12px;
@@ -118,10 +118,10 @@
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
         
-        /* ★答え合わせボタン：縦・横どちらでもキーパッドの右に綺麗に収まる高さに調整 */
+        /* 答え合わせボタン */
         .check-btn {
             width: 75px;
-            height: 264px; /* キーパッド全体の高さ（60px * 4行 + 隙間）にジャストフィット */
+            height: 264px;
             font-size: 20px;
             background-color: #4CAF50;
             color: white;
@@ -150,14 +150,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
-        /* 📱 画面の幅が狭い時（縦向きスマホなど）のレスポンシブ対応 */
         @media (max-width: 650px) {
             .game-container {
-                flex-direction: column; /* 筆算と操作エリアは上下に並べる */
+                flex-direction: column;
                 padding: 15px;
                 gap: 15px;
             }
-            /* 縦画面でも、キーパッドと答え合わせボタンの横並び関係は壊れません */
         }
     </style>
 </head>
@@ -197,7 +195,8 @@
     </div>
 
     <script>
-        const boxOrder = ['ans1', 'ans2', 'sub1', 'rem1'];
+        // ★【ここを修正】カーソル移動の順番を実際の計算順（ans1 → sub1 → ans2 → rem1）に変更しました
+        const boxOrder = ['ans1', 'sub1', 'ans2', 'rem1'];
         let currentSelectedId = 'ans1';
         let correctValues = {};
 
