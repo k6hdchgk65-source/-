@@ -1,1 +1,282 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筆算割り算ゲーム（掛け算なし版）</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 10px;
+        }
+        
+        h2 { margin: 10px 0 5px 0; font-size: 20px; }
+        p { margin: 0 0 10px 0; font-size: 14px; color: #555; }
+
+        /* 筆算の表示エリア（Gridレイアウト） */
+        .math-grid {
+            background: white;
+            display: inline-grid;
+            grid-template-columns: repeat(6, 35px);
+            /* 行数を4行（商、問題、1回目の引き算、最後のあまり）に縮小 */
+            grid-template-rows: repeat(4, 40px);
+            gap: 2px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 26px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            align-items: center;
+            justify-items: center;
+            margin-bottom: 10px;
+        }
+
+        /* 空欄（入力ボックス）のスタイル */
+        .blank {
+            width: 30px;
+            height: 35px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 35px;
+            background-color: #fffde7;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .blank.selected {
+            border-color: #ff5722;
+            background-color: #ffe0b2;
+        }
+        
+        /* 筆算の横線（位置を調整） */
+        .grid-line-1 {
+            grid-column: 2 / 6;
+            grid-row: 3;
+            width: 100%;
+            border-bottom: 2px solid #333;
+            align-self: start;
+        }
+
+        /* 結果表示エリア */
+        #result-message {
+            font-size: 18px;
+            font-weight: bold;
+            height: 25px;
+            margin-bottom: 10px;
+        }
+
+        /* 操作エリア */
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 8px;
+        }
+        .key {
+            width: 60px;
+            height: 55px;
+            font-size: 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .key:active { background: #1976D2; }
+        .key.clear { background: #f44336; }
+        
+        .check-btn {
+            width: 80px;
+            height: 244px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 4px;
+        }
+        .check-btn:active { background-color: #388E3C; }
+
+        .next-btn {
+            display: none;
+            margin: 15px auto 0 auto;
+            padding: 10px 30px;
+            font-size: 18px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
+    <p>頭の中で引き算をして、あまりの数を入れていこう！</p>
+
+    <div class="math-grid" id="math-grid-screen"></div>
+
+    <div id="result-message"></div>
+
+    <div class="controls-container">
+        <div class="keypad">
+            <button class="key" onclick="inputNum(1)">1</button>
+            <button class="key" onclick="inputNum(2)">2</button>
+            <button class="key" onclick="inputNum(3)">3</button>
+            <button class="key" onclick="inputNum(4)">4</button>
+            <button class="key" onclick="inputNum(5)">5</button>
+            <button class="key" onclick="inputNum(6)">6</button>
+            <button class="key" onclick="inputNum(7)">7</button>
+            <button class="key" onclick="inputNum(8)">8</button>
+            <button class="key" onclick="inputNum(9)">9</button>
+            <div style="width:60px;"></div> 
+            <button class="key" onclick="inputNum(0)">0</button>
+            <button class="key clear" onclick="clearBox()">消</button>
+        </div>
+        <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
+    </div>
+
+    <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
+
+    <script>
+        // ★入力マスの進む順番（掛け算のマスを排除し、5マスに削減しました）
+        const boxOrder = ['ans1', 'ans2', 'sub1_1', 'sub1_2', 'rem1'];
+        let currentSelectedId = 'ans1';
+        let correctAnswers = {};
+
+        function generateProblem() {
+            document.getElementById('result-message').innerText = '';
+            document.getElementById('next-button').style.display = 'none';
+
+            // 商が2桁になる問題の生成ロジック
+            const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
+            const d1 = Math.floor(Math.random() * (divisor - 1)) + 1; // 百の位
+            const d2 = Math.floor(Math.random() * 10); // 十の位
+            const upper_two_digits = d1 * 10 + d2;
+
+            const q_tens = Math.floor(upper_two_digits / divisor);       
+            const mult1 = divisor * q_tens;                               
+            const sub1_total = upper_two_digits - mult1; // 1回目の引き算の答え
+
+            const q_ones = Math.floor(Math.random() * 10);             
+            const mult2 = divisor * q_ones;                               
+            const final_remainder = Math.floor(Math.random() * (divisor - 1)) + 1; // 最終余り
+
+            const d3_display = mult2 + final_remainder; 
+            const d3 = d3_display % 10;
+
+            // 正解データの割り当て
+            correctAnswers = {
+                'ans1': q_tens.toString(),
+                'ans2': q_ones.toString(),
+                'sub1_1': Math.floor(sub1_total / 10).toString(), 
+                'sub1_2': (sub1_total % 10).toString(),           
+                'rem1': final_remainder.toString()         
+            };
+
+            // Grid画面の描画（掛け算の行をなくしてすっきり配置）
+            const gridScreen = document.getElementById('math-grid-screen');
+            gridScreen.innerHTML = `
+                <div id="ans1" class="blank" style="grid-column:4; grid-row:1;" onclick="selectBox('ans1')"></div>
+                <div id="ans2" class="blank" style="grid-column:5; grid-row:1;" onclick="selectBox('ans2')"></div>
+                
+                <div style="grid-column:1; grid-row:2; justify-self:end;">${divisor}</div>
+                <div style="grid-column:2; grid-row:2; border-top:2px solid #333; border-left:2px solid #333; border-top-left-radius:8px; height:100%; width:100%; box-sizing:border-box; margin-top:12px;"></div>
+                <div style="grid-column:3; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d1}</div>
+                <div style="grid-column:4; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d2}</div>
+                <div style="grid-column:5; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d3}</div>
+
+                <div id="sub1_1" class="blank" style="grid-column:3; grid-row:3;" onclick="selectBox('sub1_1')"></div>
+                <div id="sub1_2" class="blank" style="grid-column:4; grid-row:3;" onclick="selectBox('sub1_2')"></div>
+                <div style="grid-column:5; grid-row:3;">${d3}</div>
+
+                <div class="grid-line-1"></div>
+                <div id="rem1" class="blank" style="grid-column:5; grid-row:4; align-self:end;" onclick="selectBox('rem1')"></div>
+            `;
+
+            currentSelectedId = 'ans1';
+            document.getElementById('ans1').classList.add('selected');
+        }
+
+        // 入力・削除・判定処理
+        function selectBox(id) {
+            const currentBox = document.getElementById(currentSelectedId);
+            if(currentBox) currentBox.classList.remove('selected');
+            currentSelectedId = id;
+            const newBox = document.getElementById(currentSelectedId);
+            if(newBox) newBox.classList.add('selected');
+        }
+
+        function inputNum(num) {
+            const targetBox = document.getElementById(currentSelectedId);
+            if(!targetBox) return;
+            targetBox.innerText = num;
+
+            const currentIndex = boxOrder.indexOf(currentSelectedId);
+            if (currentIndex < boxOrder.length - 1) {
+                const nextBoxId = boxOrder[currentIndex + 1];
+                selectBox(nextBoxId);
+            }
+        }
+
+        function clearBox() {
+            const targetBox = document.getElementById(currentSelectedId);
+            if(!targetBox) return;
+            targetBox.innerText = '';
+            
+            const currentIndex = boxOrder.indexOf(currentSelectedId);
+            if (currentIndex > 0) {
+                const prevBoxId = boxOrder[currentIndex - 1];
+                selectBox(prevBoxId);
+            }
+        }
+
+        function checkAnswer() {
+            let isAllCorrect = true;
+            const messageArea = document.getElementById('result-message');
+
+            for (let id of boxOrder) {
+                const userStatus = document.getElementById(id).innerText;
+                const correctAnswer = correctAnswers[id];
+
+                if (userStatus !== correctAnswer) {
+                    isAllCorrect = false;
+                    break;
+                }
+            }
+
+            if (isAllCorrect) {
+                messageArea.style.color = '#4CAF50';
+                messageArea.innerText = '正解！🎉 すごいスピード！';
+                document.getElementById('next-button').style.display = 'block';
+            } else {
+                messageArea.style.color = '#f44336';
+                messageArea.innerText = 'おや？もう一度考えてみよう🤔';
+            }
+        }
+
+        window.onload = generateProblem;
+    </script>
+
+</body>
+</html>
