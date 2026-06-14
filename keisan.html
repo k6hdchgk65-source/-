@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（3桁÷1桁版）</title>
+    <title>筆算割り算ゲーム（桁揃え完璧版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,42 +16,57 @@
         h2 { margin: 10px 0 5px 0; font-size: 20px; }
         p { margin: 0 0 10px 0; font-size: 14px; color: #555; }
 
-        /* 筆算の表示エリア */
-        .math-container {
+        /* ★筆算の表示エリア（Gridレイアウトで方眼紙を作る） */
+        .math-grid {
             background: white;
-            display: inline-block;
-            padding: 15px 25px;
+            display: inline-grid;
+            /* 6列構成： [割る数] [)] [百の位] [十の位] [一の位] [あまりスペース] */
+            grid-template-columns: repeat(6, 35px);
+            /* 7行構成： 商、問題、掛け算1、引き算1、掛け算2、線、あまり */
+            grid-template-rows: repeat(7, 40px);
+            gap: 2px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-size: 24px;
+            font-size: 26px;
             font-family: 'Courier New', Courier, monospace;
-            line-height: 1.4;
-            text-align: right;
+            font-weight: bold;
+            align-items: center;
+            justify-items: center;
             margin-bottom: 10px;
         }
+
         /* 空欄（入力ボックス）のスタイル */
         .blank {
             width: 30px;
             height: 35px;
             border: 2px solid #333;
             border-radius: 5px;
-            display: inline-block;
             text-align: center;
-            vertical-align: middle;
+            line-height: 35px;
             background-color: #fffde7;
             cursor: pointer;
+            box-sizing: border-box;
         }
         .blank.selected {
             border-color: #ff5722;
             background-color: #ffe0b2;
         }
         
-        /* 筆算の引き算の線 */
-        .math-line {
-            border-top: 2px solid #333; 
-            display: inline-block; 
-            width: 130px;
-            margin: 3px 0;
+        /* ★筆算の引き算の線（Gridの横幅いっぱいに引く） */
+        .grid-line-1 {
+            grid-column: 2 / 6;
+            grid-row: 4;
+            width: 100%;
+            border-bottom: 2px solid #333;
+            align-self: start;
+        }
+        .grid-line-2 {
+            grid-column: 2 / 6;
+            grid-row: 6;
+            width: 100%;
+            border-bottom: 2px solid #333;
+            align-self: start;
         }
 
         /* 結果表示エリア */
@@ -62,7 +77,7 @@
             margin-bottom: 10px;
         }
 
-        /* 操作エリアのコンテナ */
+        /* 操作エリア */
         .controls-container {
             display: flex;
             justify-content: center;
@@ -70,8 +85,6 @@
             max-width: 360px;
             margin: 0 auto;
         }
-
-        /* 数字ボタン用のグリッド */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 60px);
@@ -90,9 +103,7 @@
         }
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
-        .key.clear:active { background: #d32f2f; }
         
-        /* 答え合わせボタン */
         .check-btn {
             width: 80px;
             height: 244px;
@@ -107,11 +118,9 @@
             writing-mode: vertical-rl;
             text-orientation: upright;
             letter-spacing: 4px;
-            padding: 0;
         }
         .check-btn:active { background-color: #388E3C; }
 
-        /* 「つぎの問題へ」ボタン */
         .next-btn {
             display: none;
             margin: 15px auto 0 auto;
@@ -125,7 +134,6 @@
             font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .next-btn:active { background-color: #e65100; }
     </style>
 </head>
 <body>
@@ -133,7 +141,7 @@
     <h2>筆算クイズ（3桁 ÷ 1桁）</h2>
     <p>すべての空欄をうめて、答え合わせを押してね！</p>
 
-    <div class="math-container" id="math-screen">
+    <div class="math-grid" id="math-grid-screen">
         </div>
 
     <div id="result-message"></div>
@@ -153,22 +161,14 @@
             <button class="key" onclick="inputNum(0)">0</button>
             <button class="key clear" onclick="clearBox()">消</button>
         </div>
-        
         <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
     </div>
 
     <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
 
     <script>
-        // 入力する順番の定義（マスのIDを上から順に並べる）
-        const boxOrder = [
-            'ans1', 'ans2',       // 商の十の位、一の位
-            'm1_1', 'm1_2',       // 1回目の掛け算（十の位、一の位）
-            'sub1',               // 1回目の引き算の答え
-            'm2_1', 'm2_2',       // 2回目の掛け算（十の位、一の位）
-            'rem1'                // 最後のあまり
-        ];
-        
+        // 入力マスの進む順番
+        const boxOrder = ['ans1', 'ans2', 'm1_1', 'm1_2', 'sub1', 'm2_1', 'm2_2', 'rem1'];
         let currentSelectedId = 'ans1';
         let correctAnswers = {};
 
@@ -176,39 +176,22 @@
             document.getElementById('result-message').innerText = '';
             document.getElementById('next-button').style.display = 'none';
 
-            // --- 3桁÷1桁のロジック生成 ---
-            const divisor = Math.floor(Math.random() * 7) + 3; // 割る数: 3〜9
-            const q_tens = Math.floor(Math.random() * 8) + 1;  // 商の十の位: 1〜8
-            const q_ones = Math.floor(Math.random() * 9) + 0;  // 商の一の位: 0〜9
-            const total_quotient = q_tens * 10 + q_ones;       // 合計の商 (2桁)
-
-            // 1回目の掛け算（割る数 × 商の十の位）
+            // 問題作成ロジック（前回と同じ、3桁÷1桁で2桁の商になる設定）
+            const divisor = Math.floor(Math.random() * 7) + 3; 
+            const q_tens = Math.floor(Math.random() * 8) + 1;  
+            const q_ones = Math.floor(Math.random() * 9) + 0;  
             const mult1 = divisor * q_tens;
-            
-            // 1回目の引き算の残りと、割られる数の一の位を合わせた数（2回目の計算対象）
-            // これが割る数より大きくなるように、かつ2桁になるように調整
-            const rem_step1 = Math.floor(Math.random() * 5) + 1; // 1回目の引き算の余り
-            const d_ones = Math.floor(Math.random() * 10);      // 割られる数の一の位
-
-            // 2回目の引き算（割る数 × 商の一の位）
             const mult2 = divisor * q_ones;
-            // 最終的な余り
             const final_remainder = Math.floor(Math.random() * (divisor - 1)) + 1;
-
-            // 逆算して「割られる数」を正確に決定
-            // 割られる数 = (mult1 * 10) + mult2 + final_remainder
             const dividend = (mult1 * 10) + mult2 + final_remainder;
 
-            // 桁の分解
-            const d1 = Math.floor(dividend / 100);       // 百の位
-            const d2 = Math.floor((dividend % 100) / 10); // 十の位
-            const d3 = dividend % 10;                     // 一の位
+            const d1 = Math.floor(dividend / 100);       
+            const d2 = Math.floor((dividend % 100) / 10); 
+            const d3 = dividend % 10;                     
 
-            // 途中の引き算の答え（下ろしてきた一の位の数字を含む）
             const step2_target = (dividend - (mult1 * 100)); 
-            const sub1_val = Math.floor(step2_target / 10); // 引き算単体の結果
+            const sub1_val = Math.floor(step2_target / 10); 
 
-            // 正解の設定
             correctAnswers = {
                 'ans1': q_tens.toString(),
                 'ans2': q_ones.toString(),
@@ -220,35 +203,40 @@
                 'rem1': final_remainder.toString()
             };
 
-            // 筆算画面の描画（スペース調整用に透明文字や全角スペースを使用）
-            const mathScreen = document.getElementById('math-screen');
-            mathScreen.innerHTML = `
-                <span style="visibility:hidden;">０) </span>
-                <div id="ans1" class="blank" onclick="selectBox('ans1')"></div>
-                <div id="ans2" class="blank" onclick="selectBox('ans2')"></div><br>
+            // ★CSS Grid用に位置を厳密に指定したHTMLを生成
+            // grid-column (列位置: 1=割る数, 2=記号, 3=百の位, 4=十の位, 5=一の位)
+            // grid-row (行位置: 1=商, 2=問題, 3=掛け算1, 4=引き算1, 5=掛け算2, 7=あまり)
+            const gridScreen = document.getElementById('math-grid-screen');
+            gridScreen.innerHTML = `
+                <div id="ans1" class="blank" style="grid-column:4; grid-row:1;" onclick="selectBox('ans1')"></div>
+                <div id="ans2" class="blank" style="grid-column:5; grid-row:1;" onclick="selectBox('ans2')"></div>
                 
-                <span style="border-top: 2px solid #333; padding-top: 3px;">${divisor} ) ${d1} ${d2} ${d3}</span><br>
-                
-                <div id="m1_1" class="blank" onclick="selectBox('m1_1')"></div>
-                <div id="m1_2" class="blank" onclick="selectBox('m1_2')"></div>
-                <span style="visibility:hidden;">０</span><br>
-                <span class="math-line"></span><br>
-                
-                <div id="sub1" class="blank" onclick="selectBox('sub1')"></div>
-                <span>${d3}</span><br>
-                
-                <div id="m2_1" class="blank" onclick="selectBox('m2_1')"></div>
-                <div id="m2_2" class="blank" onclick="selectBox('m2_2')"></div><br>
-                <span class="math-line"></span><br>
-                
-                <div id="rem1" class="blank" onclick="selectBox('rem1')"></div>
+                <div style="grid-column:1; grid-row:2; justify-self:end;">${divisor}</div>
+                <div style="grid-column:2; grid-row:2; border-top:2px solid #333; border-left:2px solid #333; border-top-left-radius:8px; height:100%; width:100%; box-sizing:border-box; margin-top:12px;"></div>
+                <div style="grid-column:3; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d1}</div>
+                <div style="grid-column:4; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d2}</div>
+                <div style="grid-column:5; grid-row:2; border-top:2px solid #333; padding-top:4px; width:100%; text-align:center;">${d3}</div>
+
+                <div id="m1_1" class="blank" style="grid-column:3; grid-row:3;" onclick="selectBox('m1_1')"></div>
+                <div id="m1_2" class="blank" style="grid-column:4; grid-row:3;" onclick="selectBox('m1_2')"></div>
+
+                <div class="grid-line-1"></div>
+                <div id="sub1" class="blank" style="grid-column:4; grid-row:4; align-self:end;" onclick="selectBox('sub1')"></div>
+                <div style="grid-column:5; grid-row:4; align-self:end;">${d3}</div>
+
+                <div id="m2_1" class="blank" style="grid-column:4; grid-row:5;" onclick="selectBox('m2_1')"></div>
+                <div id="m2_2" class="blank" style="grid-column:5; grid-row:5;" onclick="selectBox('m2_2')"></div>
+
+                <div class="grid-line-2"></div>
+
+                <div id="rem1" class="blank" style="grid-column:5; grid-row:7;" onclick="selectBox('rem1')"></div>
             `;
 
-            // 初期選択
             currentSelectedId = 'ans1';
             document.getElementById('ans1').classList.add('selected');
         }
 
+        // 以下の入力処理や判定処理は前回と同様
         function selectBox(id) {
             document.getElementById(currentSelectedId).classList.remove('selected');
             currentSelectedId = id;
