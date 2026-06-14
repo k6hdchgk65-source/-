@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（答え合わせ機能付き）</title>
+    <title>筆算割り算ゲーム（レイアウト最適化版）</title>
     <style>
+        /* スマートフォンでもスクロールが発生しにくいように全体の余白を調整 */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: #f0f0f0;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
+        
+        h2 { margin: 10px 0 5px 0; font-size: 20px; }
+        p { margin: 0 0 10px 0; font-size: 14px; color: #555; }
+
         /* 筆算の表示エリア */
         .math-container {
             background: white;
             display: inline-block;
-            padding: 20px;
+            padding: 15px 25px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             font-size: 24px;
             font-family: 'Courier New', Courier, monospace;
             line-height: 1.5;
             text-align: right;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         /* 空欄（入力ボックス）のスタイル */
         .blank {
@@ -41,24 +46,32 @@
             border-color: #ff5722;
             background-color: #ffe0b2;
         }
-        /* 結果表示エリア */
+        /* 結果表示エリア（高さを固定してガタつきを防ぐ） */
         #result-message {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
-            height: 30px;
-            margin: 15px 0;
+            height: 25px;
+            margin-bottom: 10px;
         }
-        /* キーパッド */
+
+        /* ★キーパッドと答え合わせボタンを横並びにするコンテナ */
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+
+        /* 数字ボタン用のグリッド（4列：1〜9と0・消す） */
         .keypad {
             display: grid;
-            grid-template-columns: repeat(5, 60px);
-            gap: 10px;
-            justify-content: center;
-            margin-top: 10px;
+            grid-template-columns: repeat(3, 60px);
+            gap: 8px;
         }
         .key {
             width: 60px;
-            height: 60px;
+            height: 55px;
             font-size: 20px;
             background: #2196F3;
             color: white;
@@ -68,13 +81,15 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .key:active { background: #1976D2; }
-        .key.clear { background: #f44336; }
         
-        /* 答え合わせボタン */
+        /* 消すボタン（0の右隣に配置） */
+        .key.clear { background: #f44336; }
+        .key.clear:active { background: #d32f2f; }
+        
+        /* ★答え合わせボタンを縦長にして右側に配置 */
         .check-btn {
-            grid-column: span 5;
-            width: 100%;
-            height: 50px;
+            width: 80px;
+            height: 244px; /* 数字ボタン4段分（55px*4 + 隙間8px*3）に合わせる */
             font-size: 18px;
             background-color: #4CAF50;
             color: white;
@@ -83,15 +98,19 @@
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            margin-top: 5px;
+            /* 文字を縦書きっぽく見せる（または折り返し） */
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 4px;
+            padding: 0;
         }
         .check-btn:active { background-color: #388E3C; }
     </style>
 </head>
 <body>
 
-    <h2>筆算クイズ（答え合わせ付き）</h2>
-    <p>空欄をうめて「答え合わせ」ボタンを押してね！</p>
+    <h2>筆算クイズ</h2>
+    <p>数字を入力して右の「答え合わせ」を押してね</p>
 
     <div class="math-container">
         <div id="box1" class="blank selected" onclick="selectBox('box1')"></div><br>
@@ -104,48 +123,46 @@
 
     <div id="result-message"></div>
 
-    <div class="keypad">
-        <button class="key" onclick="inputNum(1)">1</button>
-        <button class="key" onclick="inputNum(2)">2</button>
-        <button class="key" onclick="inputNum(3)">3</button>
-        <button class="key" onclick="inputNum(4)">4</button>
-        <button class="key" onclick="inputNum(5)">5</button>
-        <button class="key" onclick="inputNum(6)">6</button>
-        <button class="key" onclick="inputNum(7)">7</button>
-        <button class="key" onclick="inputNum(8)">8</button>
-        <button class="key" onclick="inputNum(9)">9</button>
-        <button class="key" onclick="inputNum(0)">0</button>
-        <button class="key clear" style="grid-column: span 5; width: 100%;" onclick="clearBox()">消す</button>
+    <div class="controls-container">
+        <div class="keypad">
+            <button class="key" onclick="inputNum(1)">1</button>
+            <button class="key" onclick="inputNum(2)">2</button>
+            <button class="key" onclick="inputNum(3)">3</button>
+            <button class="key" onclick="inputNum(4)">4</button>
+            <button class="key" onclick="inputNum(5)">5</button>
+            <button class="key" onclick="inputNum(6)">6</button>
+            <button class="key" onclick="inputNum(7)">7</button>
+            <button class="key" onclick="inputNum(8)">8</button>
+            <button class="key" onclick="inputNum(9)">9</button>
+            <div style="width:60px;"></div> 
+            <button class="key" onclick="inputNum(0)">0</button>
+            <button class="key clear" onclick="clearBox()">消</button>
+        </div>
         
         <button class="check-btn" onclick="checkAnswer()">答え合わせ</button>
     </div>
 
     <script>
-        // 空欄が進む順番
         const boxOrder = ['box1', 'box2', 'box3', 'box4'];
         let currentSelectedId = 'box1';
 
-        // ★正しい答えのデータをオブジェクトで定義（24 ÷ 7 = 3 あまり 3）
         const correctAnswers = {
-            'box1': '3', // 商
-            'box2': '2', // 引く数十の位
-            'box3': '1', // 引く数一の位
-            'box4': '3'  // あまり
+            'box1': '3',
+            'box2': '2',
+            'box3': '1',
+            'box4': '3'
         };
 
-        // 空欄を手動で選択した時の動き
         function selectBox(id) {
             document.getElementById(currentSelectedId).classList.remove('selected');
             currentSelectedId = id;
             document.getElementById(currentSelectedId).classList.add('selected');
         }
 
-        // 数字ボタンを押した時の動き
         function inputNum(num) {
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = num;
 
-            // 自動で次の空欄に移動
             const currentIndex = boxOrder.indexOf(currentSelectedId);
             if (currentIndex < boxOrder.length - 1) {
                 const nextBoxId = boxOrder[currentIndex + 1];
@@ -153,7 +170,6 @@
             }
         }
 
-        // 消すボタンを押した時の動き
         function clearBox() {
             const targetBox = document.getElementById(currentSelectedId);
             targetBox.innerText = '';
@@ -165,23 +181,20 @@
             }
         }
 
-        // ★答え合わせボタンを押した時の動き
         function checkAnswer() {
             let isAllCorrect = true;
             const messageArea = document.getElementById('result-message');
 
-            // すべてのボックスをループして、中身が正解と一致するか確かめる
             for (let id of boxOrder) {
                 const userStatus = document.getElementById(id).innerText;
                 const correctAnswer = correctAnswers[id];
 
                 if (userStatus !== correctAnswer) {
-                    isAllCorrect = false; // 1つでも違えば不合格
+                    isAllCorrect = false;
                     break;
                 }
             }
 
-            // 判定結果を画面に表示
             if (isAllCorrect) {
                 messageArea.style.color = '#4CAF50';
                 messageArea.innerText = '正解！🎉 すばらしい！';
