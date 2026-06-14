@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筆算割り算ゲーム（カーソル順最適化版）</title>
+    <title>筆算割り算ゲーム（履歴記録機能付き）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
         h2 { margin: 5px 0; font-size: 22px; }
         p { margin: 0 0 15px 0; font-size: 14px; color: #555; }
 
-        /* 全体のコンテナ（iPad横向きなどの広い画面用） */
+        /* 全体のコンテナ */
         .game-container {
             display: flex;
             flex-direction: row;
@@ -34,6 +34,7 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.1);
             max-width: 900px;
             width: 95%;
+            margin-bottom: 20px;
         }
 
         /* 筆算の表示エリア */
@@ -49,7 +50,6 @@
             justify-items: center;
         }
 
-        /* 空欄（入力ボックス）のスタイル */
         .blank {
             width: 40px;
             height: 45px;
@@ -66,7 +66,6 @@
             background-color: #ffe0b2;
         }
         
-        /* 筆算の横線 */
         .grid-line-1 {
             grid-column: 2 / 6;
             grid-row: 3;
@@ -75,7 +74,6 @@
             align-self: start;
         }
 
-        /* 右側（または下側）の操作エリア */
         .right-side-controls {
             display: flex;
             flex-direction: column;
@@ -83,14 +81,12 @@
             gap: 10px;
         }
 
-        /* 結果表示エリア */
         #result-message {
             font-size: 18px;
             font-weight: bold;
             height: 25px;
         }
 
-        /* キーパッドと答え合わせボタンを常に横並びにするコンテナ */
         .controls-container {
             display: flex;
             flex-direction: row;
@@ -118,7 +114,6 @@
         .key:active { background: #1976D2; }
         .key.clear { background: #f44336; }
         
-        /* 答え合わせボタン */
         .check-btn {
             width: 75px;
             height: 264px;
@@ -150,6 +145,52 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
+        /* 📊 ★履歴エリアのスタイル */
+        .history-container {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 95%;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+        .history-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-history-btn {
+            background: #9e9e9e;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .history-table th, .history-table td {
+            border-bottom: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .history-table th {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        .status-ok { color: #4CAF50; font-weight: bold; }
+        .status-ng { color: #f44336; font-weight: bold; }
+
         @media (max-width: 650px) {
             .game-container {
                 flex-direction: column;
@@ -165,9 +206,10 @@
     <p>頭の中で引き算をして、あまりの数を入れていこう！</p>
 
     <div class="game-container">
-        
+        <!-- 左側：筆算エリア -->
         <div class="math-grid" id="math-grid-screen"></div>
 
+        <!-- 右側：操作エリア -->
         <div class="right-side-controls">
             <div id="result-message"></div>
 
@@ -191,14 +233,35 @@
 
             <button id="next-button" class="next-btn" onclick="generateProblem()">つぎの問題へ 👉</button>
         </div>
+    </div>
 
+    <!-- 📊 ★履歴表示用のコンテナ -->
+    <div class="history-container">
+        <div class="history-title">
+            <span>📊 最近のチャレンジれきし（10回分）</span>
+            <button class="clear-history-btn" onclick="clearHistoryData()">れきしを消す</button>
+        </div>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>日時</th>
+                    <th>もんだい</th>
+                    <th>せいご</th>
+                </tr>
+            </thead>
+            <tbody id="history-log-body">
+                <tr>
+                    <td colspan="3" style="color:#aaa;">まだデータがありません。がんばって解いてみよう！</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <script>
-        // ★【ここを修正】カーソル移動の順番を実際の計算順（ans1 → sub1 → ans2 → rem1）に変更しました
         const boxOrder = ['ans1', 'sub1', 'ans2', 'rem1'];
         let currentSelectedId = 'ans1';
         let correctValues = {};
+        let currentProblemString = ""; // 履歴用に現在の問題を文字で保持する変数
 
         function generateProblem() {
             document.getElementById('result-message').innerText = '';
@@ -220,6 +283,9 @@
 
             const d2 = Math.floor((dividend % 100) / 10); 
             const d3 = dividend % 10;                     
+
+            // 履歴保存用のテキストを作っておく (例: "544 ÷ 8")
+            currentProblemString = `${dividend} ÷ ${divisor}`;
 
             const upper_two_digits = d1 * 10 + d2;
             const mult1 = divisor * q_tens;
@@ -294,6 +360,8 @@
             const sub1_user = parseInt(document.getElementById('sub1').innerText) || 0;
             const rem1_user = parseInt(document.getElementById('rem1').innerText) || 0;
 
+            let isCorrect = false;
+
             if (
                 ans1_user === correctValues.ans1 &&
                 ans2_user === correctValues.ans2 &&
@@ -303,13 +371,89 @@
                 messageArea.style.color = '#4CAF50';
                 messageArea.innerText = '正解！🎉 カンペキです！';
                 document.getElementById('next-button').style.display = 'block';
+                isCorrect = true;
             } else {
                 messageArea.style.color = '#f44336';
                 messageArea.innerText = 'おや？もう一度考えてみよう🤔';
+                isCorrect = false;
+            }
+
+            // ★【追加】答え合わせボタンが押されたので履歴に記録する
+            saveHistory(currentProblemString, isCorrect);
+        }
+
+        // ★【追加】履歴をLocalStorageに保存し、画面を更新する関数
+        function saveHistory(problem, isCorrect) {
+            // 現在の日時を取得してフォーマット (例: "06/14 21:15")
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = `${month}/${date} ${hours}:${minutes}`;
+
+            // 既存の履歴を取り出す（無ければ空の配列）
+            let historyData = JSON.parse(localStorage.getItem('math_game_history')) || [];
+
+            // 新しい記録のオブジェクトを作成
+            const newLog = {
+                time: timeString,
+                problem: problem,
+                result: isCorrect ? '〇 せいかい' : '× おや？'
+            };
+
+            // 配列の「最初（先頭）」に新しい記録を追加
+            historyData.unshift(newLog);
+
+            // 履歴がどんどん増えすぎないよう、最新の20回分だけ残す
+            if (historyData.length > 20) {
+                historyData = historyData.slice(0, 20);
+            }
+
+            // ローカルストレージにしっかり保存
+            localStorage.setItem('math_game_history', JSON.stringify(historyData));
+
+            // 画面の下部テーブルに反映
+            updateHistoryTable();
+        }
+
+        // ★【追加】ローカルストレージからデータを読み込んでテーブルを書き換える関数
+        function updateHistoryTable() {
+            const historyData = JSON.parse(localStorage.getItem('math_game_history')) || [];
+            const tableBody = document.getElementById('history-log-body');
+
+            if (historyData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="color:#aaa;">まだデータがありません。がんばって解いてみよう！</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            historyData.forEach(log => {
+                const resultClass = log.result.includes('せいかい') ? 'status-ok' : 'status-ng';
+                html += `
+                    <tr>
+                        <td style="color:#666;">${log.time}</td>
+                        <td style="font-weight:bold;">${log.problem}</td>
+                        <td class="${resultClass}">${log.result}</td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        // ★【追加】履歴データをリセットする関数
+        function clearHistoryData() {
+            if (confirm('これまでのがんばった「れきし」をクリアしますか？')) {
+                localStorage.removeItem('math_game_history');
+                updateHistoryTable();
             }
         }
 
-        window.onload = generateProblem;
+        // 起動時に問題を生成し、保存されている履歴があれば読み込む
+        window.onload = function() {
+            generateProblem();
+            updateHistoryTable();
+        };
     </script>
 
 </body>
