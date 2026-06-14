@@ -1,1 +1,123 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筆算割り算ゲーム（試作）</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        /* 筆算の表示エリア */
+        .math-container {
+            background: white;
+            display: inline-block;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 24px;
+            font-family: 'Courier New', Courier, monospace; /* 等幅フォントで位置を揃える */
+            line-height: 1.5;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        /* 空欄（入力ボックス）のスタイル */
+        .blank {
+            width: 30px;
+            height: 35px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            background-color: #fffde7;
+            cursor: pointer;
+        }
+        .blank.selected {
+            border-color: #ff5722;
+            background-color: #ffe0b2;
+        }
+        /* キーパッド */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .key {
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .key:active { background: #1976D2; }
+        .key.clear { background: #f44336; }
+    </style>
+</head>
+<body>
+
+    <h2>筆算クイズ</h2>
+    <p>空欄をクリックして、下のボタンで数字を入れてね！</p>
+
+    <div class="math-container">
+        <div id="box1" class="blank selected" onclick="selectBox('box1')"></div><br>
+        <span style="border-top: 2px solid #333; padding-top: 5px;">７ ) ２ ４</span><br>
+        <div id="box2" class="blank" onclick="selectBox('box2')"></div>
+        <div id="box3" class="blank" onclick="selectBox('box3')"></div><br>
+        <span style="border-top: 2px solid #333; display:inline-block; width:80px;"></span><br>
+        <div id="box4" class="blank" onclick="selectBox('box4')"></div>
+    </div>
+
+    <div class="keypad">
+        <button class="key" onclick="inputNum(1)">1</button>
+        <button class="key" onclick="inputNum(2)">2</button>
+        <button class="key" onclick="inputNum(3)">3</button>
+        <button class="key" onclick="inputNum(4)">4</button>
+        <button class="key" onclick="inputNum(5)">5</button>
+        <button class="key" onclick="inputNum(6)">6</button>
+        <button class="key" onclick="inputNum(7)">7</button>
+        <button class="key" onclick="inputNum(8)">8</button>
+        <button class="key" onclick="inputNum(9)">9</button>
+        <button class="key" onclick="inputNum(0)">0</button>
+        <button class="key clear" style="grid-column: span 5; width: 100%;" onclick="clearBox()">消す</button>
+    </div>
+
+    <script>
+        // 現在どの空欄を選択しているかを記録する変数
+        let currentSelectedId = 'box1';
+
+        // 空欄を選択した時の動き
+        function selectBox(id) {
+            // これまで選択されていたボックスの「選択中スタイル」を解除
+            document.getElementById(currentSelectedId).classList.remove('selected');
+            // 新しく選択されたボックスを記録してスタイルを適用
+            currentSelectedId = id;
+            document.getElementById(currentSelectedId).classList.add('selected');
+        }
+
+        // 数字ボタンを押した時の動き
+        function inputNum(num) {
+            const targetBox = document.getElementById(currentSelectedId);
+            targetBox.innerText = num;
+        }
+
+        // 消すボタンを押した時の動き
+        function clearBox() {
+            const targetBox = document.getElementById(currentSelectedId);
+            targetBox.innerText = '';
+        }
+    </script>
+
+</body>
+</html>
