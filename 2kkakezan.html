@@ -1,1 +1,296 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2桁の掛け算 筆算クイズ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .button-group {
+            margin-bottom: 25px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.check-btn {
+            background-color: #2ecc71;
+        }
+        button.check-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        /* 筆算のグリッドエリア */
+        .hissan-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(5, 40px); /* 5列分 */
+            grid-auto-rows: 45px;
+            gap: 2px;
+            background-color: #bdc3c7;
+            padding: 2px;
+            border-radius: 4px;
+            margin: 0auto 20px auto;
+            align-items: center;
+            justify-content: center;
+        }
+        .cell {
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+            user-select: none;
+            position: relative;
+        }
+        /* 線を引くためのクラス */
+        .border-bottom {
+            border-bottom: 3px solid #2c3e50;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #34495e;
+            background-color: #e8f4f8;
+            outline: none;
+        }
+        .cell input:focus {
+            background-color: #d4e6f1;
+        }
+        /* 間違えた時の赤背景 */
+        .cell input.error {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+        
+        .result-message {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+        .success { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <h1>2桁の掛け算 筆算クイズ</h1>
+
+    <div class="container">
+        <div class="button-group">
+            <button onclick="generateQuestion()">つぎの問題</button>
+            <button class="check-btn" onclick="checkAnswers()">こたえあわせ</button>
+        </div>
+
+        <div id="hissan-container" class="hissan-grid">
+            </div>
+
+        <div id="result" class="result-message"></div>
+    </div>
+
+<script>
+    let num1 = 0;
+    let num2 = 0;
+    let inputsInfo = []; // 入力フォームの位置と正解を記録する配列
+
+    // 画面起動時に一問目を生成
+    window.onload = generateQuestion;
+
+    function generateQuestion() {
+        // 2桁のランダムな数字を生成 (10〜99)
+        num1 = Math.floor(Math.random() * 90) + 10;
+        num2 = Math.floor(Math.random() * 90) + 10;
+        
+        document.getElementById('result').innerText = '';
+        inputsInfo = [];
+        
+        const grid = document.getElementById('hissan-container');
+        grid.innerHTML = ''; // グリッドをクリア
+
+        // 計算プロセスのデータ作成
+        const num2_1 = num2 % 10;          // 1の位
+        const num2_10 = Math.floor(num2 / 10); // 10の位
+        
+        const subTotal1 = num1 * num2_1;   // 1段目の掛け算結果
+        const subTotal2 = num1 * num2_10;  // 2段目の掛け算結果（実際は10倍される）
+        const finalAns = num1 * num2;      // 最終的な答え
+
+        // 5列 × 6行のグリッド配列を準備 (空白で初期化)
+        // 0行目: かけられる数 (num1)
+        // 1行目: かける数 (num2) と「×」記号
+        // 2行目: 1段目の計算 (num1 * 1の位)
+        // 3行目: 2段目の計算 (num1 * 10の位)
+        // 4行目: 合計 (最終的な答え)
+        let matrix = Array(5).fill().map(() => Array(5).fill(''));
+
+        // --- 0行目: かけられる数 (右詰めで配置) ---
+        const str1 = num1.toString();
+        matrix[0][3] = str1[0];
+        matrix[0][4] = str1[1];
+
+        // --- 1行目: かける数と記号 ---
+        const str2 = num2.toString();
+        matrix[1][1] = '×';
+        matrix[1][3] = str2[0];
+        matrix[1][4] = str2[1];
+
+        // --- 2行目: 1段目の掛け算 (入力欄) ---
+        // 3桁または2桁になる可能性があるので、右詰め。
+        // ここでは答え合わせ用にインデックスと正解を保持
+        setupInputRow(matrix, 2, subTotal1, 4);
+
+        // --- 3行目: 2段目の掛け算 (入力欄) ---
+        // 10の位をかけたものなので、1の位(一番右)は空欄にするか0にする。
+        // 一般的な筆算ルールに従い、1マス左にずらして配置。
+        setupInputRow(matrix, 3, subTotal2, 3); 
+        // 2段目の1の位マス（一番右）は自動的に空欄、または0でも良いが今回は触らせない空欄（または0を固定）
+        matrix[3][4] = ' '; 
+
+        // --- 4行目: 最終合計 (入力欄) ---
+        setupInputRow(matrix, 4, finalAns, 4);
+
+        // HTML要素の組み立て
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                // 1行目（かける数の行）と3行目（2段目の掛け算の行）の下に線を引く
+                if (r === 1 || r === 3) {
+                    cell.classList.add('border-bottom');
+                }
+
+                // 中身の判定
+                if (typeof matrix[r][c] === 'object' && matrix[r][c].isInput) {
+                    // 入力欄を生成
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    input.dataset.ans = matrix[r][c].ans;
+                    
+                    // 1文字入れたら自動で左のマスにフォーカスを移す（筆算は右から左に解くため）
+                    input.addEventListener('input', function() {
+                        if (this.value.length === 1) {
+                            focusNext(r, c);
+                        }
+                    });
+
+                    cell.appendChild(input);
+                } else {
+                    // 固定テキスト（数字や記号）
+                    cell.innerText = matrix[r][c];
+                }
+                
+                grid.appendChild(cell);
+            }
+        }
+    }
+
+    // 特定の行に数値を右詰めで入力欄としてセットする関数
+    function setupInputRow(matrix, row, value, rightColIndex) {
+        const str = value.toString();
+        let currCol = rightColIndex;
+        
+        for (let i = str.length - 1; i >= 0; i--) {
+            if (currCol >= 0) {
+                matrix[row][currCol] = { isInput: true, ans: str[i] };
+                currCol--;
+            }
+        }
+    }
+
+    // 入力時に自動で「左隣のマス」にフォーカスを移動させる（筆算の思考に合わせる）
+    function focusNext(row, col) {
+        // 同じ行の左側の列を探す
+        for (let c = col - 1; c >= 0; c--) {
+            const nextInput = document.querySelector(`input[data-row='${row}'][data-col='${c}']`);
+            if (nextInput) {
+                nextInput.focus();
+                return;
+            }
+        }
+        // もしその行の左端に達したら、次のステップの行の一番右の入力欄へ
+        if (row < 4) {
+            for (let nextRow = row + 1; nextRow <= 4; nextRow++) {
+                for (let c = 4; c >= 0; c--) {
+                    const nextInput = document.querySelector(`input[data-row='${nextRow}'][data-col='${c}']`);
+                    if (nextInput) {
+                        nextInput.focus();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // こたえあわせ機能
+    function checkAnswers() {
+        const inputs = document.querySelectorAll('.cell input');
+        let allCorrect = true;
+
+        inputs.forEach(input => {
+            const expected = input.dataset.ans;
+            const actual = input.value.trim();
+
+            if (actual === expected) {
+                input.classList.remove('error');
+            } else {
+                input.classList.add('error');
+                allCorrect = false;
+            }
+        });
+
+        const resultDiv = document.getElementById('result');
+        if (allCorrect) {
+            resultDiv.className = 'result-message success';
+            resultDiv.innerText = '正解！たいへんよくできました！';
+        } else {
+            resultDiv.className = 'result-message wrong';
+            resultDiv.innerText = 'おや？ちがうところがあるよ。赤色のマスを見直してみてね。';
+        }
+    }
+</script>
+
+</body>
+</html>
