@@ -1,1 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1けたの たしざんクイズ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #eef5fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none; /* ボタン連打時のテキスト選択を防ぐ */
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 340px;
+        }
+        /* 問題表示エリア */
+        .question-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-size: 40px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        /* 1桁ごとの四角い入力欄 */
+        .answer-boxes {
+            display: flex;
+            gap: 8px;
+        }
+        .box {
+            width: 45px;
+            height: 55px;
+            border: 3px solid #4a90e2;
+            border-radius: 8px;
+            font-size: 36px;
+            font-weight: bold;
+            line-height: 55px;
+            text-align: center;
+            background-color: #f7faff;
+        }
+        /* テンキーエリア */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .key-btn {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px 0;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #ccc;
+        }
+        .key-btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .clear-btn {
+            background-color: #ffcccb;
+            border-color: #ff9999;
+            box-shadow: 0 3px 0 #ff9999;
+        }
+        /* アクションボタン（答え合わせ・つぎの問題） */
+        .action-btn {
+            width: 100%;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 12px 0;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #submit-btn {
+            background-color: #4caf50;
+            box-shadow: 0 4px 0 #388e3c;
+        }
+        #submit-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        #next-btn {
+            background-color: #ff9800;
+            box-shadow: 0 4px 0 #f57c00;
+            display: none; /* 最初は隠す */
+        }
+        #next-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        /* 結果表示 */
+        .result {
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 38px;
+        }
+        .correct { color: #ff5722; }
+        .incorrect { color: #2196f3; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div class="question-row">
+        <span id="question">? + ?</span>
+        <span>＝</span>
+        <div class="answer-boxes">
+            <div class="box" id="tens-box"></div>
+            <div class="box" id="ones-box"></div>
+        </div>
+    </div>
+
+    <div class="keypad">
+        <button class="key-btn" onclick="pressNum(1)">1</button>
+        <button class="key-btn" onclick="pressNum(2)">2</button>
+        <button class="key-btn" onclick="pressNum(3)">3</button>
+        <button class="key-btn" onclick="pressNum(4)">4</button>
+        <button class="key-btn" onclick="pressNum(5)">5</button>
+        <button class="key-btn" onclick="pressNum(6)">6</button>
+        <button class="key-btn" onclick="pressNum(7)">7</button>
+        <button class="key-btn" onclick="pressNum(8)">8</button>
+        <button class="key-btn" onclick="pressNum(9)">9</button>
+        <button class="key-btn clear-btn" onclick="pressClear()">けす</button>
+        <button class="key-btn" onclick="pressNum(0)">0</button>
+        <div></div> </div>
+
+    <button id="submit-btn" class="action-btn" onclick="checkAnswer()">こたえあわせ</button>
+    <button id="next-btn" class="action-btn" onclick="nextQuestion()">つぎの問題</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+    let num1 = 0;
+    let num2 = 0;
+    let correctAnswer = 0;
+    let currentInput = ""; // 入力された数字を文字列で保持（最大2桁）
+
+    window.onload = function() {
+        nextQuestion();
+    };
+
+    // 新しい問題を作る
+    function nextQuestion() {
+        num1 = Math.floor(Math.random() * 9) + 1;
+        num2 = Math.floor(Math.random() * 9) + 1;
+        correctAnswer = num1 + num2;
+
+        document.getElementById("question").textContent = `${num1} + ${num2}`;
+        
+        // 入力と表示のリセット
+        currentInput = "";
+        updateBoxes();
+        document.getElementById("result").textContent = "";
+        
+        // ボタンの切り替え
+        document.getElementById("submit-btn").style.display = "block";
+        document.getElementById("next-btn").style.display = "none";
+    }
+
+    // 数字ボタンが押されたとき
+    function pressNum(num) {
+        // 答え合わせが終わった後は入力を受け付けない
+        if (document.getElementById("next-btn").style.display === "block") return;
+
+        // 最大2桁まで
+        if (currentInput.length < 2) {
+            currentInput += num;
+            updateBoxes();
+        }
+    }
+
+    // 「けす」ボタンが押されたとき
+    function pressClear() {
+        if (document.getElementById("next-btn").style.display === "block") return;
+        
+        currentInput = currentInput.slice(0, -1); // 末尾の1文字を消す
+        updateBoxes();
+    }
+
+    // 四角いマス（10の位、1の位）の表示を更新する
+    function updateBoxes() {
+        const tensBox = document.getElementById("tens-box");
+        const onesBox = document.getElementById("ones-box");
+
+        if (currentInput.length === 0) {
+            tensBox.textContent = "";
+            onesBox.textContent = "";
+        } else if (currentInput.length === 1) {
+            // 1文字のときは1の位のマスに表示
+            tensBox.textContent = "";
+            onesBox.textContent = currentInput;
+        } else if (currentInput.length === 2) {
+            // 2文字のときは10の位と1の位に分けて表示
+            tensBox.textContent = currentInput[0];
+            onesBox.textContent = currentInput[1];
+        }
+    }
+
+    // 答え合わせボタンが押されたとき
+    function checkAnswer() {
+        if (currentInput === "") {
+            alert("すうじを いれてね！");
+            return;
+        }
+
+        const userAnswer = parseInt(currentInput, 10);
+        const resultDiv = document.getElementById("result");
+
+        if (userAnswer === correctAnswer) {
+            resultDiv.textContent = "○ せいかい！";
+            resultDiv.className = "result correct";
+        } else {
+            resultDiv.textContent = `× ざんねん！ 正解は ${correctAnswer}`;
+            resultDiv.className = "result incorrect";
+        }
+
+        // ボタンの切り替え
+        document.getElementById("submit-btn").style.display = "none";
+        document.getElementById("next-btn").style.display = "block";
+    }
+</script>
+
+</body>
+</html>
 
