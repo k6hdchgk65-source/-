@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1けたの たしざんクイズ</title>
+    <title>1けたの たしざんクイズ（履歴つき）</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #eef5fb;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            padding: 20px;
             margin: 0;
-            user-select: none; /* ボタン連打時のテキスト選択を防ぐ */
+            user-select: none;
         }
         .quiz-container {
             background-color: white;
@@ -22,6 +22,7 @@
             box-shadow: 0 6px 15px rgba(0,0,0,0.1);
             text-align: center;
             width: 340px;
+            margin-bottom: 20px;
         }
         /* 問題表示エリア */
         .question-row {
@@ -76,7 +77,7 @@
             border-color: #ff9999;
             box-shadow: 0 3px 0 #ff9999;
         }
-        /* アクションボタン（答え合わせ・つぎの問題） */
+        /* アクションボタン */
         .action-btn {
             width: 100%;
             font-size: 22px;
@@ -98,7 +99,7 @@
         #next-btn {
             background-color: #ff9800;
             box-shadow: 0 4px 0 #f57c00;
-            display: none; /* 最初は隠す */
+            display: none;
         }
         #next-btn:active {
             transform: translateY(4px);
@@ -113,6 +114,60 @@
         }
         .correct { color: #ff5722; }
         .incorrect { color: #2196f3; }
+
+        /* 履歴表示エリア */
+        .history-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            width: 350px;
+            max-height: 300px;
+            overflow-y: auto; /* 20件並んだらスクロールできるようにする */
+        }
+        .history-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-history-link {
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        .history-date {
+            color: #888;
+        }
+        .history-q {
+            font-weight: bold;
+            color: #333;
+        }
+        .history-status.ok {
+            color: #ff5722;
+            font-weight: bold;
+        }
+        .history-status.ng {
+            color: #2196f3;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -139,7 +194,8 @@
         <button class="key-btn" onclick="pressNum(9)">9</button>
         <button class="key-btn clear-btn" onclick="pressClear()">けす</button>
         <button class="key-btn" onclick="pressNum(0)">0</button>
-        <div></div> </div>
+        <div></div>
+    </div>
 
     <button id="submit-btn" class="action-btn" onclick="checkAnswer()">こたえあわせ</button>
     <button id="next-btn" class="action-btn" onclick="nextQuestion()">つぎの問題</button>
@@ -147,17 +203,26 @@
     <div class="result" id="result"></div>
 </div>
 
+<div class="history-container">
+    <div class="history-title">
+        <span>さいきんのきろく (最大20件)</span>
+        <span class="clear-history-link" onclick="clearHistory()">きろくを消す</span>
+    </div>
+    <ul class="history-list" id="history-list">
+        </ul>
+</div>
+
 <script>
     let num1 = 0;
     let num2 = 0;
     let correctAnswer = 0;
-    let currentInput = ""; // 入力された数字を文字列で保持（最大2桁）
+    let currentInput = "";
 
     window.onload = function() {
         nextQuestion();
+        displayHistory(); // 起動時に保存されている履歴を表示
     };
 
-    // 新しい問題を作る
     function nextQuestion() {
         num1 = Math.floor(Math.random() * 9) + 1;
         num2 = Math.floor(Math.random() * 9) + 1;
@@ -165,37 +230,28 @@
 
         document.getElementById("question").textContent = `${num1} + ${num2}`;
         
-        // 入力と表示のリセット
         currentInput = "";
         updateBoxes();
         document.getElementById("result").textContent = "";
         
-        // ボタンの切り替え
         document.getElementById("submit-btn").style.display = "block";
         document.getElementById("next-btn").style.display = "none";
     }
 
-    // 数字ボタンが押されたとき
     function pressNum(num) {
-        // 答え合わせが終わった後は入力を受け付けない
         if (document.getElementById("next-btn").style.display === "block") return;
-
-        // 最大2桁まで
         if (currentInput.length < 2) {
             currentInput += num;
             updateBoxes();
         }
     }
 
-    // 「けす」ボタンが押されたとき
     function pressClear() {
         if (document.getElementById("next-btn").style.display === "block") return;
-        
-        currentInput = currentInput.slice(0, -1); // 末尾の1文字を消す
+        currentInput = currentInput.slice(0, -1);
         updateBoxes();
     }
 
-    // 四角いマス（10の位、1の位）の表示を更新する
     function updateBoxes() {
         const tensBox = document.getElementById("tens-box");
         const onesBox = document.getElementById("ones-box");
@@ -204,17 +260,15 @@
             tensBox.textContent = "";
             onesBox.textContent = "";
         } else if (currentInput.length === 1) {
-            // 1文字のときは1の位のマスに表示
             tensBox.textContent = "";
             onesBox.textContent = currentInput;
         } else if (currentInput.length === 2) {
-            // 2文字のときは10の位と1の位に分けて表示
             tensBox.textContent = currentInput[0];
             onesBox.textContent = currentInput[1];
         }
     }
 
-    // 答え合わせボタンが押されたとき
+    // 答え合わせと履歴の保存
     function checkAnswer() {
         if (currentInput === "") {
             alert("すうじを いれてね！");
@@ -223,21 +277,98 @@
 
         const userAnswer = parseInt(currentInput, 10);
         const resultDiv = document.getElementById("result");
+        let isCorrect = false;
 
         if (userAnswer === correctAnswer) {
             resultDiv.textContent = "○ せいかい！";
             resultDiv.className = "result correct";
+            isCorrect = true;
         } else {
             resultDiv.textContent = `× ざんねん！ 正解は ${correctAnswer}`;
             resultDiv.className = "result incorrect";
+            isCorrect = false;
         }
 
-        // ボタンの切り替え
+        // 履歴を保存する関数を呼び出す
+        saveRecord(`${num1}+${num2}`, userAnswer, isCorrect);
+
         document.getElementById("submit-btn").style.display = "none";
         document.getElementById("next-btn").style.display = "block";
+    }
+
+    // データをローカルストレージに保存する関数
+    function saveRecord(questionText, userAnswer, isCorrect) {
+        // 現在の日付と時刻を取得 (例: "06/15 14:30")
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const date = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const timeString = `${month}/${date} ${hours}:${minutes}`;
+
+        // 今回のデータをオブジェクトにする
+        const newRecord = {
+            time: timeString,
+            question: questionText,
+            answer: userAnswer,
+            status: isCorrect ? "○" : "×"
+        };
+
+        // すでに保存されている履歴を読み出す（ない場合は空の配列）
+        let history = JSON.parse(localStorage.getItem("quiz_history")) || [];
+
+        // 新しい履歴を配列の「先頭」に追加（最新が上に来るように）
+        history.unshift(newRecord);
+
+        // 20件を超えたら古いものを消す
+        if (history.length > 20) {
+            history = history.slice(0, 20);
+        }
+
+        // ローカルストレージに再保存
+        localStorage.setItem("quiz_history", JSON.stringify(history));
+
+        // 画面の履歴一覧を更新
+        displayHistory();
+    }
+
+    // 保存された履歴を画面に表示する関数
+    function displayHistory() {
+        const historyList = document.getElementById("history-list");
+        historyList.innerHTML = ""; // 一旦リストを空にする
+
+        const history = JSON.parse(localStorage.getItem("quiz_history")) || [];
+
+        if (history.length === 0) {
+            historyList.innerHTML = `<li class="history-item" style="color:#aaa; justify-content:center;">まだデータがありません</li>`;
+            return;
+        }
+
+        // 配列をループしてHTMLを組み立てる
+        history.forEach(item => {
+            const li = document.createElement("li");
+            li.className = "history-item";
+
+            // 正誤によって色を変えるためのクラス設定
+            const statusClass = item.status === "○" ? "history-status ok" : "history-status ng";
+
+            li.innerHTML = `
+                <span class="history-date">${item.time}</span>
+                <span class="history-q">${item.question}=${item.answer}</span>
+                <span class="${statusClass}">${item.status}</span>
+            `;
+            historyList.appendChild(li);
+        });
+    }
+
+    // 履歴をすべて削除する関数
+    function clearHistory() {
+        if (confirm("これまでのきろくを すべて消してもいいですか？")) {
+            localStorage.removeItem("quiz_history");
+            displayHistory();
+        }
     }
 </script>
 
 </body>
 </html>
-
