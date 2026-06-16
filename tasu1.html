@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1けたの たしざんクイズ（履歴つき）</title>
+    <title>1けたの たしざんクイズ（やりなおし機能つき）</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -24,7 +24,6 @@
             width: 340px;
             margin-bottom: 20px;
         }
-        /* 問題表示エリア */
         .question-row {
             display: flex;
             justify-content: center;
@@ -35,7 +34,6 @@
             color: #333;
             margin-bottom: 20px;
         }
-        /* 1桁ごとの四角い入力欄 */
         .answer-boxes {
             display: flex;
             gap: 8px;
@@ -51,7 +49,6 @@
             text-align: center;
             background-color: #f7faff;
         }
-        /* テンキーエリア */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -77,7 +74,6 @@
             border-color: #ff9999;
             box-shadow: 0 3px 0 #ff9999;
         }
-        /* アクションボタン */
         .action-btn {
             width: 100%;
             font-size: 22px;
@@ -105,9 +101,8 @@
             transform: translateY(4px);
             box-shadow: none;
         }
-        /* 結果表示 */
         .result {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             margin-top: 15px;
             min-height: 38px;
@@ -115,7 +110,6 @@
         .correct { color: #ff5722; }
         .incorrect { color: #2196f3; }
 
-        /* 履歴表示エリア */
         .history-container {
             background-color: white;
             padding: 20px;
@@ -123,7 +117,7 @@
             box-shadow: 0 6px 15px rgba(0,0,0,0.1);
             width: 350px;
             max-height: 300px;
-            overflow-y: auto; /* 20件並んだらスクロールできるようにする */
+            overflow-y: auto;
         }
         .history-title {
             font-size: 18px;
@@ -208,8 +202,7 @@
         <span>さいきんのきろく (最大20件)</span>
         <span class="clear-history-link" onclick="clearHistory()">きろくを消す</span>
     </div>
-    <ul class="history-list" id="history-list">
-        </ul>
+    <ul class="history-list" id="history-list"></ul>
 </div>
 
 <script>
@@ -217,16 +210,18 @@
     let num2 = 0;
     let correctAnswer = 0;
     let currentInput = "";
+    let hasHistoryLogged = false; // この問題で、すでに一度でも履歴に書いたかどうかのフラグ
 
     window.onload = function() {
         nextQuestion();
-        displayHistory(); // 起動時に保存されている履歴を表示
+        displayHistory();
     };
 
     function nextQuestion() {
         num1 = Math.floor(Math.random() * 9) + 1;
         num2 = Math.floor(Math.random() * 9) + 1;
         correctAnswer = num1 + num2;
+        hasHistoryLogged = false; // 次の問題にいったのでフラグをリセット
 
         document.getElementById("question").textContent = `${num1} + ${num2}`;
         
@@ -240,6 +235,7 @@
 
     function pressNum(num) {
         if (document.getElementById("next-btn").style.display === "block") return;
+
         if (currentInput.length < 2) {
             currentInput += num;
             updateBoxes();
@@ -248,8 +244,10 @@
 
     function pressClear() {
         if (document.getElementById("next-btn").style.display === "block") return;
+        
         currentInput = currentInput.slice(0, -1);
         updateBoxes();
+        document.getElementById("result").textContent = "";
     }
 
     function updateBoxes() {
@@ -268,7 +266,6 @@
         }
     }
 
-    // 答え合わせと履歴の保存
     function checkAnswer() {
         if (currentInput === "") {
             alert("すうじを いれてね！");
@@ -277,28 +274,33 @@
 
         const userAnswer = parseInt(currentInput, 10);
         const resultDiv = document.getElementById("result");
-        let isCorrect = false;
 
         if (userAnswer === correctAnswer) {
             resultDiv.textContent = "○ せいかい！";
             resultDiv.className = "result correct";
-            isCorrect = true;
+
+            // まだこの問題の履歴が一度も書かれていない場合（＝1発正解のとき）だけ「○」を記録
+            if (!hasHistoryLogged) {
+                saveRecord(`${num1}+${num2}`, userAnswer, "○");
+                hasHistoryLogged = true;
+            }
+
+            document.getElementById("submit-btn").style.display = "none";
+            document.getElementById("next-btn").style.display = "block";
         } else {
-            resultDiv.textContent = `× ざんねん！ 正解は ${correctAnswer}`;
+            resultDiv.textContent = "× ざんねん！ もういちど 考えてみよう";
             resultDiv.className = "result incorrect";
-            isCorrect = false;
+            
+            // 初めて間違えた瞬間（まだ履歴が書かれていない）なら「×」を即座に記録！
+            if (!hasHistoryLogged) {
+                saveRecord(`${num1}+${num2}`, userAnswer, "×");
+                hasHistoryLogged = true; // 2回目以降のバツは記録しないようにロック
+            }
         }
-
-        // 履歴を保存する関数を呼び出す
-        saveRecord(`${num1}+${num2}`, userAnswer, isCorrect);
-
-        document.getElementById("submit-btn").style.display = "none";
-        document.getElementById("next-btn").style.display = "block";
     }
 
-    // データをローカルストレージに保存する関数
-    function saveRecord(questionText, userAnswer, isCorrect) {
-        // 現在の日付と時刻を取得 (例: "06/15 14:30")
+    // 履歴に保存する関数（statusには "○" か "×" が直接入ります）
+    function saveRecord(questionText, userAnswer, statusMark) {
         const now = new Date();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const date = String(now.getDate()).padStart(2, '0');
@@ -306,36 +308,27 @@
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const timeString = `${month}/${date} ${hours}:${minutes}`;
 
-        // 今回のデータをオブジェクトにする
         const newRecord = {
             time: timeString,
             question: questionText,
-            answer: userAnswer,
-            status: isCorrect ? "○" : "×"
+            answer: userAnswer, // 間違えたときはその間違えた数字、正解のときは正解の数字が入ります
+            status: statusMark
         };
 
-        // すでに保存されている履歴を読み出す（ない場合は空の配列）
         let history = JSON.parse(localStorage.getItem("quiz_history")) || [];
-
-        // 新しい履歴を配列の「先頭」に追加（最新が上に来るように）
         history.unshift(newRecord);
 
-        // 20件を超えたら古いものを消す
         if (history.length > 20) {
             history = history.slice(0, 20);
         }
 
-        // ローカルストレージに再保存
         localStorage.setItem("quiz_history", JSON.stringify(history));
-
-        // 画面の履歴一覧を更新
         displayHistory();
     }
 
-    // 保存された履歴を画面に表示する関数
     function displayHistory() {
         const historyList = document.getElementById("history-list");
-        historyList.innerHTML = ""; // 一旦リストを空にする
+        historyList.innerHTML = "";
 
         const history = JSON.parse(localStorage.getItem("quiz_history")) || [];
 
@@ -344,12 +337,9 @@
             return;
         }
 
-        // 配列をループしてHTMLを組み立てる
         history.forEach(item => {
             const li = document.createElement("li");
             li.className = "history-item";
-
-            // 正誤によって色を変えるためのクラス設定
             const statusClass = item.status === "○" ? "history-status ok" : "history-status ng";
 
             li.innerHTML = `
@@ -361,7 +351,6 @@
         });
     }
 
-    // 履歴をすべて削除する関数
     function clearHistory() {
         if (confirm("これまでのきろくを すべて消してもいいですか？")) {
             localStorage.removeItem("quiz_history");
