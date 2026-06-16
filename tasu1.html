@@ -210,7 +210,7 @@
     let num2 = 0;
     let correctAnswer = 0;
     let currentInput = "";
-    let hasHistoryLogged = false; // この問題で、すでに一度でも履歴に書いたかどうかのフラグ
+    let hasMistakeLogged = false; // この問題で「すでにバツを1回記録したか」のフラグ
 
     window.onload = function() {
         nextQuestion();
@@ -221,7 +221,7 @@
         num1 = Math.floor(Math.random() * 9) + 1;
         num2 = Math.floor(Math.random() * 9) + 1;
         correctAnswer = num1 + num2;
-        hasHistoryLogged = false; // 次の問題にいったのでフラグをリセット
+        hasMistakeLogged = false; // 新しい問題なのでバツ記録フラグをリセット
 
         document.getElementById("question").textContent = `${num1} + ${num2}`;
         
@@ -279,11 +279,8 @@
             resultDiv.textContent = "○ せいかい！";
             resultDiv.className = "result correct";
 
-            // まだこの問題の履歴が一度も書かれていない場合（＝1発正解のとき）だけ「○」を記録
-            if (!hasHistoryLogged) {
-                saveRecord(`${num1}+${num2}`, userAnswer, "○");
-                hasHistoryLogged = true;
-            }
+            // 正解は、前にバツを書いていようがいまいが「必ず履歴に記録」する
+            saveRecord(`${num1}+${num2}`, userAnswer, "○");
 
             document.getElementById("submit-btn").style.display = "none";
             document.getElementById("next-btn").style.display = "block";
@@ -291,15 +288,14 @@
             resultDiv.textContent = "× ざんねん！ もういちど 考えてみよう";
             resultDiv.className = "result incorrect";
             
-            // 初めて間違えた瞬間（まだ履歴が書かれていない）なら「×」を即座に記録！
-            if (!hasHistoryLogged) {
+            // 初めて間違えた瞬間（まだ今問のバツ履歴を書いてない）なら「×」を記録！
+            if (!hasMistakeLogged) {
                 saveRecord(`${num1}+${num2}`, userAnswer, "×");
-                hasHistoryLogged = true; // 2回目以降のバツは記録しないようにロック
+                hasMistakeLogged = true; // 2回目以降の連続バツは記録しないようにロック
             }
         }
     }
 
-    // 履歴に保存する関数（statusには "○" か "×" が直接入ります）
     function saveRecord(questionText, userAnswer, statusMark) {
         const now = new Date();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -311,7 +307,7 @@
         const newRecord = {
             time: timeString,
             question: questionText,
-            answer: userAnswer, // 間違えたときはその間違えた数字、正解のときは正解の数字が入ります
+            answer: userAnswer, // 入力した通りの答え（間違えた数字 / 正解の数字）
             status: statusMark
         };
 
